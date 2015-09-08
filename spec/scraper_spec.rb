@@ -16,6 +16,12 @@ describe Scraper do
     end
   end
 
+  context '#name' do
+    it 'returns the name of the layer' do
+      expect(scraper.name). to eq 'Gazetteer'
+    end
+  end
+
   context '#pk' do
     it 'returns the "primary key" field for the layer' do
       expect(scraper.pk).to eq 'OBJECTID'
@@ -62,8 +68,8 @@ describe Scraper do
     it 'returns a hash of data for all layer objects' do
       scraper.instance_variable_set(:@max, 2)
       allow(scraper).to receive(:count) { 4 }
-      puts scraper.all_data
-      expect(scraper.all_data.keys).to eq %w(displayFieldName fieldAliases geometryType spatialReference fields features)
+      data = scraper.all_data
+      expect(scraper.all_data['features'].count).to eq 4
     end
   end
 

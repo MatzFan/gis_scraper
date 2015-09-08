@@ -15,23 +15,39 @@ class Scraper
   DOMAIN = 'gps.digimap.gg/'
   ROOT = 'arcgis/rest/services/'
 
+  attr_reader :name
+
   def initialize(service, layer_num)
     @service = service
     @layer_num = layer_num
     @url = url
     @agent = Mechanize.new
     @agent.pluggable_parser['text/plain'] = JSONParser
+    @layer = layer # json
+    @name = name
     @pk = pk
     @max = max # maxRecordCount - usually 1000
     @form = form
   end
 
+  def url
+    SCHEME + DOMAIN + ROOT + @service + "/MapServer/#{@layer_num}"
+  end
+
+  def layer
+    @agent.get(url + '?f=pjson').json
+  end
+
+  def name
+    @layer['name']
+  end
+
   def pk
-    @agent.get(url + '?f=pjson').json['fields'].first['name']
+    @layer['fields'].first['name'] # assumes first is pk
   end
 
   def max
-    @agent.get(url + '?f=pjson').json['maxRecordCount'].to_i
+    @layer['maxRecordCount'].to_i
   end
 
   def form
@@ -45,7 +61,7 @@ class Scraper
 
   def set_query_params(loop_num = nil)
     @form.fields[0].value = where_text(loop_num)
-    @form.radiobuttons[4].check unless loop_num # count only true
+    loop_num ? @form.radiobuttons[4].uncheck : @form.radiobuttons[4].check # count only true
     @form.fields[6].value = '*'
     @form.field_with(name: 'f').options[1].select # for JSON
   end
@@ -65,17 +81,12 @@ class Scraper
 
   private
 
-  def url
-    SCHEME + DOMAIN + ROOT + @service + "/MapServer/#{@layer_num}"
-  end
-
   def num_loops
     (count.to_f/@max).ceil
   end
 
   def where_text(n)
-    return "#{pk} > 0" unless n
-    "#{pk} > #{n * @max} AND #{pk} <= #{(n + 1) * @max}"
+    n ? "#{pk} > #{n * @max} AND #{pk} <= #{(n + 1) * @max}" : "#{pk} > 0"
   end
 
 end
