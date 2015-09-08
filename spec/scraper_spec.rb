@@ -46,8 +46,24 @@ describe Scraper do
     end
 
     it 'returns data for the set of records' do
-      puts scraper.data(68).keys
-      expect(scraper.data(68)['features'].count).to eq 537
+      expect(scraper.data(67)['features'].count).to eq 537
+    end
+  end
+
+  context '#features' do
+    it 'returns an array of the features data for all layer objects' do
+      scraper.instance_variable_set(:@max, 2)
+      allow(scraper).to receive(:count) { 4 }
+      expect(scraper.features.count).to eq 4
+    end
+  end
+
+  context '#all_data' do
+    it 'returns a hash of data for all layer objects' do
+      scraper.instance_variable_set(:@max, 2)
+      allow(scraper).to receive(:count) { 4 }
+      puts scraper.all_data
+      expect(scraper.all_data.keys).to eq %w(displayFieldName fieldAliases geometryType spatialReference fields features)
     end
   end
 

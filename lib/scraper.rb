@@ -56,18 +56,18 @@ class Scraper
   end
 
   def features
-    num_loops.map { |n| data(n)['features'] }
+    (0...num_loops).map { |n| data(n)['features'] }.flatten
   end
 
-  # def all_data
-  #   data[0].merge
-  # end
+  def all_data
+    data(0).merge({ 'features' => features })
+  end
+
+  private
 
   def url
     SCHEME + DOMAIN + ROOT + @service + "/MapServer/#{@layer_num}"
   end
-
-  private
 
   def num_loops
     (count.to_f/@max).ceil
@@ -75,7 +75,7 @@ class Scraper
 
   def where_text(n)
     return "#{pk} > 0" unless n
-    "#{pk} > #{(n -1) * @max} AND #{pk} <= #{n * @max}"
+    "#{pk} > #{n * @max} AND #{pk} <= #{(n + 1) * @max}"
   end
 
 end
