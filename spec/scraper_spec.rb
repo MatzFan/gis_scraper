@@ -2,17 +2,16 @@ require 'scraper'
 
 describe Scraper do
 
-  let(:scraper) { Scraper.new('StatesOfJersey/JerseyMappingOL', 0) }
+  let(:scraper) { Scraper.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0' }
+  let(:bad_url_scraper) { Scraper.new 'garbage' }
 
-  context '#new(service, layer_num)' do
+  context '#new(url)' do
+    it 'raises ArgumentError "Invalid MapServer URL" with a bad URL arg' do
+      expect(->{bad_url_scraper}).to raise_error ArgumentError, 'Invalid MapServer URL'
+    end
+
     it 'instantiates an instance of the class' do
       expect(scraper.class).to eq Scraper
-    end
-  end
-
-  context '#new(service, layer_num)' do
-    it 'instantiates an instance of the class' do
-      expect(scraper.url).to eq 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0'
     end
   end
 
@@ -64,12 +63,11 @@ describe Scraper do
     end
   end
 
-  context '#all_data' do
-    it 'returns a hash of data for all layer objects' do
+  context '#json_data' do
+    it 'returns string of json data for all layer objects' do
       scraper.instance_variable_set(:@max, 2)
       allow(scraper).to receive(:count) { 4 }
-      data = scraper.all_data
-      expect(scraper.all_data['features'].count).to eq 4
+      expect(scraper.json_data.class).to eq String
     end
   end
 

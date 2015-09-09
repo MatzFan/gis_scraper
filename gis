@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+
+require_relative 'lib/scraper'
+
+scraper = Scraper.new ARGV[0]
+path = ARGV[1] || '.' # e.g. "~/Desktop"
+json = scraper.json_data
+File.write File.expand_path("#{path}/#{scraper.name}.json"), json

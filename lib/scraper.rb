@@ -11,31 +11,31 @@ end
 
 class Scraper
 
-  SCHEME = 'http://'
-  DOMAIN = 'gps.digimap.gg/'
-  ROOT = 'arcgis/rest/services/'
+  REST = '/arcgis/rest/services/'
+
+  'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0'
 
   attr_reader :name
 
-  def initialize(service, layer_num)
-    @service = service
-    @layer_num = layer_num
+  def initialize(url)
     @url = url
+    validate_url
     @agent = Mechanize.new
     @agent.pluggable_parser['text/plain'] = JSONParser
-    @layer = layer # json
+    @layer = layer # hash
     @name = name
     @pk = pk
     @max = max # maxRecordCount - usually 1000
     @form = form
   end
 
-  def url
-    SCHEME + DOMAIN + ROOT + @service + "/MapServer/#{@layer_num}"
+  def validate_url # check last part of path is a layer number
+    layer = @url.split('/').last
+    raise ArgumentError, 'Invalid MapServer URL' if layer.to_i.to_s != layer
   end
 
   def layer
-    @agent.get(url + '?f=pjson').json
+    @agent.get(@url + '?f=pjson').json
   end
 
   def name
@@ -43,7 +43,7 @@ class Scraper
   end
 
   def pk
-    @layer['fields'].first['name'] # assumes first is pk
+    @layer['fields'].first['name']
   end
 
   def max
@@ -51,7 +51,7 @@ class Scraper
   end
 
   def form
-    @agent.get(url + '/query').forms.first
+    @agent.get(@url + '/query').forms.first
   end
 
   def count
@@ -75,8 +75,8 @@ class Scraper
     (0...num_loops).map { |n| data(n)['features'] }.flatten
   end
 
-  def all_data
-    data(0).merge({ 'features' => features })
+  def json_data
+    data(0).merge({ 'features' => features }).to_json
   end
 
   private
