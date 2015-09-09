@@ -11,10 +11,6 @@ end
 
 class Scraper
 
-  REST = '/arcgis/rest/services/'
-
-  'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0'
-
   attr_reader :name
 
   def initialize(url)

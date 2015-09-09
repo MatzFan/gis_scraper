@@ -1,4 +1,5 @@
 # gis_scraper
+[![Build status](https://secure.travis-ci.org/MatzFan/gis_scraper.svg)](http://travis-ci.org/MatzFan/gis_scraper)
 
 Utility to scrape ArcGIS MapServer data using REST API.
 
