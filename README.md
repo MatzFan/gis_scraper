@@ -7,11 +7,13 @@ ArcGIS MapServer REST queries are limited to 1,000 objects in some cases. This t
 
 **Usage**
 
-The executable is called 'gis' and takes one required arg - the MapServer URL - and an optional second arg to specify the path of the output file. If omitted the file will be saved in current directory. Example:
+The executable is called 'gis' and takes one required arg - a MapServer/Layer URL (ending in an integer representing the layer number). An optional file output path may also be specified. If omitted the file will be saved in current directory. Example:
 
 ```
 gis http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0 ~/Desktop
 ```
+
+If the layer is type 'Feature Layer', a single file of JSON data will be saved (named the same as the layer). If the layer is type 'Group Layer', multiple files representing each sub-layer will be saved.
 
 **Specification and Tests**
 

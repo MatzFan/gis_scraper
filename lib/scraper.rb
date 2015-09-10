@@ -15,7 +15,6 @@ class Scraper
 
   def initialize(url)
     @url = url
-    validate_url
     @agent = Mechanize.new
     @agent.pluggable_parser['text/plain'] = JSONParser
     @layer = layer # hash
@@ -23,11 +22,6 @@ class Scraper
     @pk = pk
     @max = max # maxRecordCount - usually 1000
     @form = form
-  end
-
-  def validate_url # check last part of path is a layer number
-    layer = @url.split('/').last
-    raise ArgumentError, 'Invalid MapServer URL' if layer.to_i.to_s != layer
   end
 
   def layer

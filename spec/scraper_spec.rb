@@ -6,10 +6,6 @@ describe Scraper do
   let(:bad_url_scraper) { Scraper.new 'garbage' }
 
   context '#new(url)' do
-    it 'raises ArgumentError "Invalid MapServer URL" with a bad URL arg' do
-      expect(->{bad_url_scraper}).to raise_error ArgumentError, 'Invalid MapServer URL'
-    end
-
     it 'instantiates an instance of the class' do
       expect(scraper.class).to eq Scraper
     end

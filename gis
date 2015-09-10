@@ -1,8 +1,10 @@
 #!/usr/bin/env ruby
 
-require_relative 'lib/scraper'
+require_relative 'lib/map_server'
 
-scraper = Scraper.new ARGV[0]
+server = MapServer.new ARGV[0]
 path = ARGV[1] || '.' # e.g. "~/Desktop"
-json = scraper.json_data
-File.write File.expand_path("#{path}/#{scraper.name}.json"), json
+layer_names, data_list = server.layer_name_list, server.layers_data_json_list
+layer_names.zip(data_list).each do |arr|
+  File.write File.expand_path("#{path}/#{arr.first}.json"), arr.last
+end
