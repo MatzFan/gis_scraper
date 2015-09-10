@@ -6,6 +6,7 @@ describe Layer do
   let(:group_layer) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/139' }
   let(:no_layer_id_url) { Layer.new 'no/layer/number/specified/MapServer' }
   let(:not_map_server_url) { Layer.new '"MapServer"/missing/42' }
+  let(:feature_layer_with_path) { Layer.new('http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/11', __dir__) }
 
   let(:scraper_double) { instance_double 'Scraper' }
 
@@ -64,6 +65,18 @@ describe Layer do
       allow(Scraper).to receive(:new) { scraper_double }
       allow(scraper_double).to receive(:json_data) { {} }
       expect(group_layer.layers_data_json_list).to eq [{}, {}]
+    end
+  end
+
+  context '#write' do
+    it 'writes the feature layer(s) data to JSON files in the  ' do
+      f_name = 'Aircraft Noise Zone 1.json'
+      begin
+        feature_layer_with_path.write
+        expect(`ls ./spec`).to include f_name
+      ensure
+        File.delete File.new(File.join __dir__, f_name) rescue nil
+      end
     end
   end
 

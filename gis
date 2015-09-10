@@ -2,9 +2,4 @@
 
 require_relative 'lib/layer'
 
-layer = Layer.new ARGV[0]
-path = ARGV[1] || '.' # e.g. "~/Desktop"
-layer_names, data_list = layer.layer_name_list, layer.layers_data_json_list
-layer_names.zip(data_list).each do |arr|
-  File.write File.expand_path("#{path}/#{arr.first}.json"), arr.last
-end
+ARGV[1] ? Layer.new(ARGV[0], ARGV[1]).write : Layer.new(ARGV[0]).write
