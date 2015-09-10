@@ -13,8 +13,8 @@ class Layer
     end
   end
 
-  def initialize(url)
-    @url = url
+  def initialize(url, path = '.')
+    @url, @path = url, File.expand_path(path)
     @s_url = s_url # map server url ending '../MapServer'
     @id = id
     @agent = Mechanize.new
@@ -60,6 +60,12 @@ class Layer
 
   def layer_name_list
     @layer_ids.map { |id| Scraper.new("#{@s_url}/#{id}").name }
+  end
+
+  def write
+    layer_name_list.zip(layers_data_json_list).each do |arr|
+      File.write(@path + "/#{arr.first}.json", arr.last)
+    end
   end
 
 end
