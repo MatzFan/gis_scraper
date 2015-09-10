@@ -4,6 +4,7 @@ describe Scraper do
 
   let(:scraper) { Scraper.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0' }
   let(:bad_url_scraper) { Scraper.new 'garbage' }
+  let(:odd_pk_scraper) { Scraper.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/145' }
 
   context '#new(url)' do
     it 'instantiates an instance of the class' do
@@ -18,8 +19,12 @@ describe Scraper do
   end
 
   context '#pk' do
-    it 'returns the "primary key" field for the layer' do
+    it 'returns the "primary key" field for the layer, if it is first in the field list' do
       expect(scraper.pk).to eq 'OBJECTID'
+    end
+
+    it 'returns the "primary key" field for the layer, if it is elsewhere in the field list' do
+      expect(odd_pk_scraper.pk).to eq 'OBJECTID'
     end
   end
 

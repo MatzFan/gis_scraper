@@ -33,7 +33,7 @@ class Scraper
   end
 
   def pk
-    @layer['fields'].first['name']
+    @layer['fields'].select { |f| f['type'] == 'esriFieldTypeOID' }[0]['name']
   end
 
   def max

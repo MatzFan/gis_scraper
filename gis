@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby
 
-require_relative 'lib/map_server'
+require_relative 'lib/layer'
 
-server = MapServer.new ARGV[0]
+layer = Layer.new ARGV[0]
 path = ARGV[1] || '.' # e.g. "~/Desktop"
-layer_names, data_list = server.layer_name_list, server.layers_data_json_list
+layer_names, data_list = layer.layer_name_list, layer.layers_data_json_list
 layer_names.zip(data_list).each do |arr|
   File.write File.expand_path("#{path}/#{arr.first}.json"), arr.last
 end
