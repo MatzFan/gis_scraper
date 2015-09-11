@@ -18,18 +18,17 @@ class Layer
 
   def initialize(url, path = '.')
     @url, @path = url, File.expand_path(path)
-    @s_url = s_url # map server url ending '../MapServer'
+    @ms_url = ms_url # map server url ending '../MapServer'
     @id = id
     @agent = Mechanize.new
     @agent.pluggable_parser['text/plain'] = JSONParser
     validate_url
     @page_json = page_json
     @type = type
-    @sub_layers = sub_layers
     @layer_ids = layer_ids
   end
 
-  def s_url
+  def ms_url
     @url.split('/')[0..-2].join('/')
   end
 
@@ -38,8 +37,8 @@ class Layer
   end
 
   def validate_url
-    raise ArgumentError, "URL must end with layer id" if  @id.to_i.to_s != @id
-    raise ArgumentError, 'Not a MapServer URL' if @s_url[-9..-1] != 'MapServer'
+    raise ArgumentError, 'URL must end with layer id' if  @id.to_i.to_s != @id
+    raise ArgumentError, 'Bad MapServer URL' if @ms_url[-9..-1] != 'MapServer'
   end
 
   def page_json
@@ -50,7 +49,7 @@ class Layer
     @page_json['type']
   end
 
-  def sub_layers
+  def sub_layer_id_names
     @page_json['subLayers']
   end
 
@@ -63,11 +62,11 @@ class Layer
   end
 
   def layers_data_json_list
-    @layer_ids.map { |id| FeatureScraper.new("#{@s_url}/#{id}").json_data }
+    @layer_ids.map { |id| FeatureScraper.new("#{@ms_url}/#{id}").json_data }
   end
 
   def layer_name_list
-    @layer_ids.map { |id| FeatureScraper.new("#{@s_url}/#{id}").name }
+    @layer_ids.map { |id| FeatureScraper.new("#{@ms_url}/#{id}").name }
   end
 
   def write_feature_files
@@ -77,20 +76,19 @@ class Layer
   end
 
   def write
-    sub_layers.each do |layer|
-      if sub_layer_type(layer['id']) == 'Group Layer'
-        # FileUtils.mkdir "#{@path}/#{layer['name']}"
-        recurse layer
-      end
+    sub_layer_id_names.each do |hash|
+      layer = sub_layer hash['id']
+      recurse layer, hash['name'] if layer.type == 'Group Layer'
     end
   end
 
-  def recurse(layer)
-    FileUtils.mkdir "#{@path}/#{layer['name']}"
+  def recurse(layer, dir)
+    FileUtils.mkdir "#{@path}/#{dir}"
+    layer.write
   end
 
-  def sub_layer_type(id)
-    Layer.new("#{@s_url}/#{id}").type
+  def sub_layer(id)
+    Layer.new("#{@ms_url}/#{id}")
   end
 
 end

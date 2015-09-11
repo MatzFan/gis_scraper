@@ -17,8 +17,8 @@ describe Layer do
       expect(->{no_layer_id_url}).to raise_error ArgumentError, 'URL must end with layer id'
     end
 
-    it 'raises ArgumentError "Not a MapServer URL" with a URL not ending in an integer' do
-      expect(->{not_map_server_url}).to raise_error ArgumentError, 'Not a MapServer URL'
+    it 'raises ArgumentError "Bad MapServer URL" with a URL not ending in an integer' do
+      expect(->{not_map_server_url}).to raise_error ArgumentError, 'Bad MapServer URL'
     end
 
     it 'instantiates an instance of the class with no second arg' do
@@ -36,13 +36,13 @@ describe Layer do
     end
   end
 
-  context '#sub_layers' do
-    it 'returns an emplty list for a feature layer (which have no sub layers)' do
-      expect(feature_layer.sub_layers).to eq []
+  context '#sub_layer_id_names' do
+    it 'returns an empty list for a feature layer (which have no sub layers)' do
+      expect(feature_layer.sub_layer_id_names).to eq []
     end
 
-    it 'returns a list of the sublayers [name, id] for a group layer, if any' do
-      expect(layer_with_sub_group_layers.sub_layers).to eq sub_layers
+    it 'returns a list of the sublayer hashes for :id, :name for a group layer, if any' do
+      expect(layer_with_sub_group_layers.sub_layer_id_names).to eq sub_layers
     end
   end
 
@@ -87,7 +87,7 @@ describe Layer do
         feature_layer_with_path.write_feature_files
         expect(`ls ./spec`).to include file_name
       ensure
-        File.delete File.new(File.join __dir__, file_name) rescue nil
+        File.delete File.new(File.join __dir__, file_name) rescue nil # cleanup
       end
     end
 
@@ -97,14 +97,14 @@ describe Layer do
         group_layer.write_feature_files
         file_names.all? { |file| expect(`ls ./spec`).to include file }
       ensure
-        file_names.each { |file_name| File.delete(File.new(File.join __dir__, file_name)) rescue nil }
+        file_names.each { |file_name| File.delete(File.new(File.join __dir__, file_name)) rescue nil } # cleanup
       end
     end
   end
 
-  context '#sub_layer_type(id)' do
-    it 'returns the subLayer type for the given sub layer id' do
-      expect(layer_with_sub_group_layers.sub_layer_type(130)). to eq 'Group Layer'
+  context '#sub_layer(id)' do
+    it 'returns the a Layer object for the given the sub layer id' do
+      expect(layer_with_sub_group_layers.sub_layer(130).class). to eq Layer
     end
   end
 
@@ -115,7 +115,7 @@ describe Layer do
         layer_with_sub_group_layers.write
         dir_names.all? { |dir| expect(`ls ./spec`).to include dir }
       ensure
-        dir_names.each { |dir_name| FileUtils.rm_rf "#{__dir__}/#{dir_name}" rescue nil }
+        dir_names.each { |dir_name| FileUtils.rm_rf "#{__dir__}/#{dir_name}" rescue nil } # cleanup
       end
     end
   end
