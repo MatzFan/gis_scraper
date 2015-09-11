@@ -26,6 +26,12 @@ describe Layer do
     end
   end
 
+  context '#validate_type' do
+    it 'raises UnknownLayerType <type> if layer type is not in TYPES' do
+      expect(->{feature_layer.validate_type('Unknown Layer')}).to raise_error Layer::UnknownLayerType, 'Unknown Layer'
+    end
+  end
+
   context '#type' do
     it 'returns the layer type for a feature layer' do
       expect(feature_layer.type).to eq 'Feature Layer'
@@ -46,58 +52,15 @@ describe Layer do
     end
   end
 
-  context '#group_layer_ids' do
-    it 'returns a list of the layer id\'s at this server' do
-      expect(group_layer.layer_ids).to eq [147, 148, 149, 150, 151, 152, 153, 154]
-    end
-  end
-
-  context '#layer_name_list' do
-    it 'returns a list of the layer names for a Feature Layer' do
-      allow(FeatureScraper).to receive(:new) { scraper_double }
-      allow(scraper_double).to receive(:name) { 'layer name' }
-      expect(feature_layer.layer_name_list).to eq ['layer name']
-    end
-
-    it 'returns a list of the layer names for a Group Layer' do
-      allow(FeatureScraper).to receive(:new) { scraper_double }
-      allow(scraper_double).to receive(:name).and_return('l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8')
-      expect(group_layer.layer_name_list).to eq %w(l1 l2 l3 l4 l5 l6 l7 l8)
-    end
-  end
-
-  context '#layers_data_json_list' do
-    it 'returns a single item list of the json data for a Feature Layer' do
-      allow(FeatureScraper).to receive(:new) { scraper_double }
-      allow(scraper_double).to receive(:json_data) { {} }
-      expect(feature_layer.layers_data_json_list).to eq [{}]
-    end
-
-    it 'returns a list of the json data for each sub layer in a Group Layer' do
-      allow(FeatureScraper).to receive(:new) { scraper_double }
-      allow(scraper_double).to receive(:json_data) { {} }
-      expect(group_layer.layers_data_json_list).to eq [{}, {}, {}, {}, {}, {} ,{}, {}]
-    end
-  end
-
-  context '#write_feature_files' do
+  context '#write_feature_files(name, id)' do
     it "writes a feature layer's data to a JSON file in the path specified or '.'" do
       file_name = 'Aircraft Noise Zone 1.json'
+      layer = feature_layer_with_path
       begin
-        feature_layer_with_path.write_feature_files
+        layer.write_feature_files(layer.name, layer.id)
         expect(`ls ./spec`).to include file_name
       ensure
         File.delete File.new(File.join __dir__, file_name) rescue nil # cleanup
-      end
-    end
-
-    it "writes a group layer's data (for all IMMEDIATE child feature layers) to JSON files in the path specified or '.'" do
-      file_names = %w(VC500.json SWACable185.json SWACable120.json PrimaryDuct.json MMSQ95or150.json LV501.json FibreOpticCable.json CommsCable.json)
-      begin
-        group_layer.write_feature_files
-        file_names.all? { |file| expect(`ls ./spec`).to include file }
-      ensure
-        file_names.each { |file_name| File.delete(File.new(File.join __dir__, file_name)) rescue nil } # cleanup
       end
     end
   end

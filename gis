@@ -2,5 +2,4 @@
 
 require_relative 'lib/layer'
 
-layer = Layer.new(*ARGV)
-layer.write
+Layer.new(*ARGV).write

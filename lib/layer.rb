@@ -14,8 +14,11 @@ class Layer
     end
   end
 
-  attr_reader :type
+  class UnknownLayerType < StandardError; end
 
+  attr_reader :type, :id, :name
+
+  TYPES = ['Group Layer','Feature Layer']
   GL = 'Group Layer'
 
   def initialize(url, path = '.')
@@ -27,7 +30,7 @@ class Layer
     validate_url
     @page_json = page_json
     @type = type
-    @layer_ids = layer_ids
+    @name = name
   end
 
   def ms_url
@@ -48,44 +51,40 @@ class Layer
   end
 
   def type
-    @page_json['type']
+    validate_type @page_json['type']
+  end
+
+  def name
+    @page_json['name']
+  end
+
+  def validate_type(type)
+    raise UnknownLayerType, type unless (TYPES.any? { |t| t == type })
+    type
   end
 
   def sub_layer_id_names
     @page_json['subLayers']
   end
 
-  def layer_ids
-    @type == 'Feature Layer' ? [@id] : group_layer_ids
+  def json_data(url)
+    FeatureScraper.new(url).json_data
   end
 
-  def group_layer_ids
-    @page_json['subLayers'].map { |layer| layer['id'] }
-  end
-
-  def layers_data_json_list
-    @layer_ids.map { |id| FeatureScraper.new("#{@ms_url}/#{id}").json_data }
-  end
-
-  def layer_name_list
-    @layer_ids.map { |id| FeatureScraper.new("#{@ms_url}/#{id}").name }
-  end
-
-  def write_feature_files
-    layer_name_list.zip(layers_data_json_list).each do |arr|
-      File.write(@path + "/#{arr.first}.json", arr.last)
-    end
+  def write_feature_files(name, id)
+    File.write "#{@path}/#{name}.json", json_data("#{@ms_url}/#{id}")
   end
 
   def write
-    type == GL ? process_sub_layers : write_feature_files
+    type == GL ? process_sub_layers : write_feature_files(@name, @id)
   end
 
   def process_sub_layers
-    sub_layer_id_names.each do |h|
-      sub_path = @path + '/' + h['name']
-      layer = sub_layer(h['id'], sub_path)
-      layer.type == GL ? recurse(layer, sub_path) : write_feature_files
+    sub_layer_id_names.each do |hash|
+      name, id = hash['name'], hash['id']
+      path = "#{@path}/#{name}"
+      layer = sub_layer(id, path)
+      layer.type == GL ? recurse(layer, path) : write_feature_files(name, id)
     end
   end
 
