@@ -13,6 +13,8 @@ class Layer
     end
   end
 
+  attr_reader :sub_layers
+
   def initialize(url, path = '.')
     @url, @path = url, File.expand_path(path)
     @s_url = s_url # map server url ending '../MapServer'
@@ -22,6 +24,7 @@ class Layer
     validate_url
     @page_json = page_json
     @layer_type = layer_type
+    @sub_layers = sub_layers
     @layer_ids = layer_ids
   end
 
@@ -44,6 +47,10 @@ class Layer
 
   def layer_type
     @page_json['type']
+  end
+
+  def sub_layers
+    @page_json['subLayers']
   end
 
   def layer_ids
