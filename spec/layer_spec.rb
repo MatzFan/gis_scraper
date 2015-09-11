@@ -109,6 +109,12 @@ describe Layer do
   end
 
   context '#write' do
+    it 'calls #write_feature_files for a feature layer' do
+      layer = feature_layer
+      allow(layer).to receive(:write_feature_files)
+      expect(->{layer.write}).not_to raise_error
+    end
+
     it "creates sub directories mirroring sub-group structure" do
       dir_names = ['High Pressure', 'Medium Pressure', 'Low Pressure']
       allow_any_instance_of(Layer).to receive :write_feature_files # stub recursive instances, so nothing is scraped!!

@@ -78,6 +78,10 @@ class Layer
   end
 
   def write
+    type == GL ? process_sub_layers : write_feature_files
+  end
+
+  def process_sub_layers
     sub_layer_id_names.each do |h|
       sub_path = @path + '/' + h['name']
       layer = sub_layer(h['id'], sub_path)
