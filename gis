@@ -3,4 +3,4 @@
 require_relative 'lib/layer'
 
 layer = Layer.new(*ARGV)
-layer.write
+layer.write_feature_files

@@ -9,7 +9,7 @@ class JSONParser < Mechanize::File
   end
 end
 
-class Scraper
+class FeatureScraper
 
   attr_reader :name
 

@@ -1,8 +1,11 @@
 require 'mechanize'
+require 'fileutils'
 
-require_relative 'scraper'
+require_relative 'feature_scraper'
 
 class Layer
+
+  attr_reader :type
 
   class JSONParser < Mechanize::File
     attr_reader :json
@@ -13,8 +16,6 @@ class Layer
     end
   end
 
-  attr_reader :sub_layers
-
   def initialize(url, path = '.')
     @url, @path = url, File.expand_path(path)
     @s_url = s_url # map server url ending '../MapServer'
@@ -23,7 +24,7 @@ class Layer
     @agent.pluggable_parser['text/plain'] = JSONParser
     validate_url
     @page_json = page_json
-    @layer_type = layer_type
+    @type = type
     @sub_layers = sub_layers
     @layer_ids = layer_ids
   end
@@ -45,7 +46,7 @@ class Layer
     @agent.get(@url + '?f=pjson').json
   end
 
-  def layer_type
+  def type
     @page_json['type']
   end
 
@@ -54,7 +55,7 @@ class Layer
   end
 
   def layer_ids
-    @layer_type == 'Feature Layer' ? [@id] : group_layer_ids
+    @type == 'Feature Layer' ? [@id] : group_layer_ids
   end
 
   def group_layer_ids
@@ -62,17 +63,34 @@ class Layer
   end
 
   def layers_data_json_list
-    @layer_ids.map { |id| Scraper.new("#{@s_url}/#{id}").json_data }
+    @layer_ids.map { |id| FeatureScraper.new("#{@s_url}/#{id}").json_data }
   end
 
   def layer_name_list
-    @layer_ids.map { |id| Scraper.new("#{@s_url}/#{id}").name }
+    @layer_ids.map { |id| FeatureScraper.new("#{@s_url}/#{id}").name }
   end
 
-  def write
+  def write_feature_files
     layer_name_list.zip(layers_data_json_list).each do |arr|
       File.write(@path + "/#{arr.first}.json", arr.last)
     end
+  end
+
+  def write
+    sub_layers.each do |layer|
+      if sub_layer_type(layer['id']) == 'Group Layer'
+        # FileUtils.mkdir "#{@path}/#{layer['name']}"
+        recurse layer
+      end
+    end
+  end
+
+  def recurse(layer)
+    FileUtils.mkdir "#{@path}/#{layer['name']}"
+  end
+
+  def sub_layer_type(id)
+    Layer.new("#{@s_url}/#{id}").type
   end
 
 end

@@ -1,14 +1,14 @@
-require 'scraper'
+require 'feature_scraper'
 
-describe Scraper do
+describe FeatureScraper do
 
-  let(:scraper) { Scraper.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0' }
-  let(:bad_url_scraper) { Scraper.new 'garbage' }
-  let(:odd_pk_scraper) { Scraper.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/145' }
+  let(:scraper) { FeatureScraper.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0' }
+  let(:bad_url_scraper) { FeatureScraper.new 'garbage' }
+  let(:odd_pk_scraper) { FeatureScraper.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/145' }
 
   context '#new(url)' do
     it 'instantiates an instance of the class' do
-      expect(scraper.class).to eq Scraper
+      expect(scraper.class).to eq FeatureScraper
     end
   end
 
