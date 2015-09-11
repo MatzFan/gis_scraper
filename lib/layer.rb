@@ -5,8 +5,6 @@ require_relative 'feature_scraper'
 
 class Layer
 
-  attr_reader :type
-
   class JSONParser < Mechanize::File
     attr_reader :json
 
@@ -15,6 +13,10 @@ class Layer
       @json = JSON.parse(body)
     end
   end
+
+  attr_reader :type
+
+  GL = 'Group Layer'
 
   def initialize(url, path = '.')
     @url, @path = url, File.expand_path(path)
@@ -76,19 +78,20 @@ class Layer
   end
 
   def write
-    sub_layer_id_names.each do |hash|
-      layer = sub_layer hash['id']
-      recurse layer, hash['name'] if layer.type == 'Group Layer'
+    sub_layer_id_names.each do |h|
+      sub_path = @path + '/' + h['name']
+      layer = sub_layer(h['id'], sub_path)
+      layer.type == GL ? recurse(layer, sub_path) : write_feature_files
     end
   end
 
   def recurse(layer, dir)
-    FileUtils.mkdir "#{@path}/#{dir}"
+    FileUtils.mkdir dir
     layer.write
   end
 
-  def sub_layer(id)
-    Layer.new("#{@ms_url}/#{id}")
+  def sub_layer(id, path)
+    Layer.new "#{@ms_url}/#{id}", path
   end
 
 end

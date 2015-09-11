@@ -104,13 +104,14 @@ describe Layer do
 
   context '#sub_layer(id)' do
     it 'returns the a Layer object for the given the sub layer id' do
-      expect(layer_with_sub_group_layers.sub_layer(130).class). to eq Layer
+      expect(layer_with_sub_group_layers.sub_layer(130, __dir__).class). to eq Layer
     end
   end
 
   context '#write' do
-    it "writes a group layer with sub-group layers' data (for all RECURSIVE child feature layers) into directories mirroring sub-group structure" do
+    it "creates sub directories mirroring sub-group structure" do
       dir_names = ['High Pressure', 'Medium Pressure', 'Low Pressure']
+      allow_any_instance_of(Layer).to receive :write_feature_files # stub recursive instances, so nothing is scraped!!
       begin
         layer_with_sub_group_layers.write
         dir_names.all? { |dir| expect(`ls ./spec`).to include dir }
