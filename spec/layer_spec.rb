@@ -7,6 +7,7 @@ describe Layer do
   let(:no_layer_id_url) { Layer.new 'no/layer/number/specified/MapServer' }
   let(:not_map_server_url) { Layer.new '"MapServer"/missing/42' }
   let(:feature_layer_with_path) { Layer.new('http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/11', __dir__) }
+  let(:feature_layer_unsafe_characters) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/14', __dir__ }
   let(:layer_with_sub_group_layers) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/129', __dir__ }
   sub_layers = [{"id"=>130, "name"=>"High Pressure"}, {"id"=>133, "name"=>"Medium Pressure"}, {"id"=>136, "name"=>"Low Pressure"}]
 
@@ -56,6 +57,17 @@ describe Layer do
     it "writes a feature layer's data to a JSON file in the path specified or '.'" do
       file_name = 'Aircraft Noise Zone 1.json'
       layer = feature_layer_with_path
+      begin
+        layer.write_feature_files(layer.name, layer.id)
+        expect(`ls ./spec`).to include file_name
+      ensure
+        File.delete File.new(File.join __dir__, file_name) rescue nil # cleanup
+      end
+    end
+
+    it 'writes a feature layer whose name contains unsfafe characters e.g. "/"' do
+      file_name = 'Mineral_Sand Extraction Site.json'
+      layer = feature_layer_unsafe_characters
       begin
         layer.write_feature_files(layer.name, layer.id)
         expect(`ls ./spec`).to include file_name

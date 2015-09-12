@@ -55,7 +55,7 @@ class Layer
   end
 
   def name
-    @page_json['name']
+    replace_forwardslashes_with_underscores @page_json['name']
   end
 
   def validate_type(type)
@@ -95,6 +95,12 @@ class Layer
 
   def sub_layer(id, path)
     Layer.new "#{@ms_url}/#{id}", path
+  end
+
+  private
+
+  def replace_forwardslashes_with_underscores(string)
+    string.gsub /\//, '_'
   end
 
 end
