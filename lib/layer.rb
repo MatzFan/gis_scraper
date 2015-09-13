@@ -18,8 +18,10 @@ class Layer
 
   attr_reader :type, :id, :name
 
-  TYPES = ['Group Layer','Feature Layer']
-  GL = 'Group Layer'
+  TYPES = ['Group Layer',
+           'Feature Layer',
+           'Annotation Layer',
+           'Annotation SubLayer']
 
   def initialize(url, path = '.')
     @url, @path = url, File.expand_path(path)
@@ -64,27 +66,26 @@ class Layer
   end
 
   def sub_layer_id_names
-    @page_json['subLayers']
+    @page_json['subLayers'] || []
   end
 
   def json_data(url)
     FeatureScraper.new(url).json_data
   end
 
-  def write_feature_files(name, id)
-    File.write "#{@path}/#{name}.json", json_data("#{@ms_url}/#{id}")
+  def write_json_files
+    File.write "#{@path}/#{@name}.json", json_data("#{@ms_url}/#{@id}")
   end
 
   def write
-    type == GL ? process_sub_layers : write_feature_files(@name, @id)
+    @type == 'Feature Layer' ? write_json_files : process_sub_layers
   end
 
   def process_sub_layers
     sub_layer_id_names.each do |hash|
       name, id = hash['name'], hash['id']
       path = "#{@path}/#{name}"
-      layer = sub_layer(id, path)
-      layer.type == GL ? recurse(layer, path) : write_feature_files(name, id)
+      recurse sub_layer(id, path), path
     end
   end
 
