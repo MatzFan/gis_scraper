@@ -32,27 +32,27 @@ describe Layer do
 
   context '#validate_type' do
     it 'raises UnknownLayerType <type> if layer type is not in TYPES' do
-      expect(->{feature_layer.validate_type('Unknown Layer')}).to raise_error Layer::UnknownLayerType, 'Unknown Layer'
+      expect(->{feature_layer.send(:validate_type, 'Unknown Layer')}).to raise_error Layer::UnknownLayerType, 'Unknown Layer'
     end
   end
 
   context '#type' do
     it 'returns the layer type for a feature layer' do
-      expect(feature_layer.type).to eq 'Feature Layer'
+      expect(feature_layer.send :type).to eq 'Feature Layer'
     end
 
     it 'returns the layer type for a group layer' do
-      expect(group_layer.type).to eq 'Group Layer'
+      expect(group_layer.send :type).to eq 'Group Layer'
     end
   end
 
   context '#sub_layer_id_names' do
     it 'returns an empty list for a feature layer (which have no sub layers)' do
-      expect(feature_layer.sub_layer_id_names).to eq []
+      expect(feature_layer.send :sub_layer_id_names).to eq []
     end
 
     it 'returns a list of the sublayer hashes for :id, :name for a group layer, if any' do
-      expect(layer_with_sub_group_layers.sub_layer_id_names).to eq sub_layers
+      expect(layer_with_sub_group_layers.send :sub_layer_id_names).to eq sub_layers
     end
   end
 
@@ -61,7 +61,7 @@ describe Layer do
       file_name = 'Aircraft Noise Zone 1.json'
       layer = feature_layer_with_path
       begin
-        layer.write_json_files
+        layer.send :write_json_files
         expect(`ls ./spec`).to include file_name
       ensure
         File.delete File.new(File.join __dir__, file_name) rescue nil # cleanup
@@ -72,7 +72,7 @@ describe Layer do
       file_name = 'Mineral_Sand Extraction Site.json'
       layer = feature_layer_unsafe_characters
       begin
-        layer.write_json_files
+        layer.send :write_json_files
         expect(`ls ./spec`).to include file_name
       ensure
         File.delete File.new(File.join __dir__, file_name) rescue nil # cleanup
@@ -82,11 +82,11 @@ describe Layer do
 
   context '#sub_layer(id)' do
     it 'returns the a Layer object for the given the sub layer id' do
-      expect(layer_with_sub_group_layers.sub_layer(130, __dir__).class). to eq Layer
+      expect(layer_with_sub_group_layers.send(:sub_layer, 130, __dir__).class). to eq Layer
     end
   end
 
-  context '#write' do
+  context '#write', :public do
     it 'ignores an annotation layer' do
       layer = instance_double('Layer')
       layer.instance_variable_set(:@type, 'Annotation Layer')

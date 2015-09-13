@@ -35,6 +35,12 @@ class Layer
     @name = name
   end
 
+  def write
+    @type == 'Feature Layer' ? write_json_files : process_sub_layers
+  end
+
+  private #####################################################################å
+
   def ms_url
     @url.split('/')[0..-2].join('/')
   end
@@ -77,10 +83,6 @@ class Layer
     File.write "#{@path}/#{@name}.json", json_data("#{@ms_url}/#{@id}")
   end
 
-  def write
-    @type == 'Feature Layer' ? write_json_files : process_sub_layers
-  end
-
   def process_sub_layers
     sub_layer_id_names.each do |hash|
       name, id = hash['name'], hash['id']
@@ -97,8 +99,6 @@ class Layer
   def sub_layer(id, path)
     Layer.new "#{@ms_url}/#{id}", path
   end
-
-  private
 
   def replace_forwardslashes_with_underscores(string)
     string.gsub /\//, '_'

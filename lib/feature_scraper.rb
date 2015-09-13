@@ -24,6 +24,12 @@ class FeatureScraper
     @form = form
   end
 
+  def json_data
+    data(0).merge({ 'features' => features }).to_json
+  end
+
+  private
+
   def layer
     @agent.get(@url + '?f=pjson').json
   end
@@ -64,12 +70,6 @@ class FeatureScraper
   def features
     (0...num_loops).map { |n| data(n)['features'] }.flatten
   end
-
-  def json_data
-    data(0).merge({ 'features' => features }).to_json
-  end
-
-  private
 
   def num_loops
     (count.to_f/@max).ceil
