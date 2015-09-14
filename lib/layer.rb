@@ -22,6 +22,7 @@ class Layer
            'Feature Layer',
            'Annotation Layer',
            'Annotation SubLayer']
+  QUERYABLE = ['Feature Layer', 'Annotation Layer']
 
   def initialize(url, path = '.')
     @url, @path = url, File.expand_path(path)
@@ -36,7 +37,7 @@ class Layer
   end
 
   def write
-    @type == 'Feature Layer' ? write_json_files : process_sub_layers
+    QUERYABLE.any? { |l| @type == l } ? write_json_files : process_sub_layers
   end
 
   private #####################################################################å

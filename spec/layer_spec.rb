@@ -87,19 +87,26 @@ describe Layer do
   end
 
   context '#write', :public do
-    it 'ignores an annotation layer' do
-      layer = instance_double('Layer')
-      layer.instance_variable_set(:@type, 'Annotation Layer')
-      allow(layer).to receive :write
-      expect(layer).to receive(:write_json_files).exactly(0).times
+    it 'calls #write_json_files for an annotation layer' do
+      layer = annotation_layer
+      allow_any_instance_of(Layer).to receive(:json_data) { nil }
+      begin
+        layer.write
+        expect(`ls`).to include 'Annotation6.json'
+      ensure
+        FileUtils.rm 'Annotation6.json'
+      end
     end
 
     it 'calls #write_json_files for a feature layer' do
-      layer = instance_double('Layer')
-      layer.instance_variable_set(:@type, 'Feature Layer')
-      allow(layer).to receive :write
-      allow(layer).to receive :write_json_files
-      expect(->{layer.write}).not_to raise_error
+      layer = feature_layer
+      allow_any_instance_of(Layer).to receive(:json_data) { nil }
+      begin
+        layer.write
+        expect(`ls`).to include 'Gazetteer.json'
+      ensure
+        FileUtils.rm 'Gazetteer.json'
+      end
     end
 
     it 'for a group layer creates sub directories mirroring sub-group structure' do
