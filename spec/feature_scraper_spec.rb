@@ -56,11 +56,11 @@ describe FeatureScraper do
     end
   end
 
-  context '#features' do
+  context '#features(num_threads)' do
     it 'returns an array of the features data for all layer objects' do
       scraper.instance_variable_set(:@max, 2)
-      allow(scraper).to receive(:count) { 4 }
-      expect(scraper.send(:features).count).to eq 4
+      scraper.instance_variable_set(:@loops, 2)
+      expect(scraper.send(:features, 1).count).to eq 4
     end
   end
 

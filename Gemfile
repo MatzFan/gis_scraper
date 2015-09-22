@@ -1,8 +1,7 @@
 source 'https://rubygems.org'
 
-gem 'rake', '~> 10.4'
 gem 'mechanize', '~> 2.7'
-gem 'curb', '~> 0.8'
+gem 'parallel', '~> 1.6'
 
 group :test do
   gem 'rspec', '~> 3.1'

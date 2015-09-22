@@ -2,4 +2,6 @@
 
 require_relative 'lib/layer'
 
+start = Time.now
 Layer.new(*ARGV).write
+puts "Finished in #{Time.now - start} seconds"

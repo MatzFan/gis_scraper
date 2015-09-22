@@ -1,4 +1,5 @@
 require 'mechanize'
+require 'parallel'
 
 class JSONParser < Mechanize::File
   attr_reader :json
@@ -22,10 +23,12 @@ class FeatureScraper
     @pk = pk
     @max = max # maxRecordCount - usually 1000
     @form = form
+    @loops = loops
+    @threads = 8 # seems optimum with some profiling
   end
 
   def json_data
-    data(0).merge({ 'features' => features }).to_json
+    data(0).merge({'features' => features(@threads)}).to_json
   end
 
   private
@@ -67,11 +70,11 @@ class FeatureScraper
     @form.submit(@form.buttons[1]).json
   end
 
-  def features
-    (0...num_loops).map { |n| data(n)['features'] }.flatten
+  def features(t)
+    Parallel.map(0...@loops, in_threads: t) { |n| data(n)['features'] }.flatten
   end
 
-  def num_loops
+  def loops
     (count.to_f/@max).ceil
   end
 
