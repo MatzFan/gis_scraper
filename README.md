@@ -70,5 +70,4 @@ Bug reports, pull requests (and feature requests) are welcome on GitHub at https
 
 ## License
 
-The gem is available as open source under the terms of the [MIT License](http://opensource.org/licenses
-
+The gem is available as open source under the terms of the [MIT License](http://opensource.org/licenses)
