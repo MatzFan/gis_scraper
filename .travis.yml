@@ -2,6 +2,8 @@ language: ruby
 
 before_install:
   - gem update bundler
+  - brew update
+  - brew install gdal
 
 rvm:
   - 2.0.0
