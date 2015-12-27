@@ -21,7 +21,7 @@ class FeatureScraper
     @max = max # maxRecordCount - usually 1000
     @form = form
     @loops = loops
-    @threads = config[:threads]
+    @threads = GisScraper.config[:threads]
   end
 
   def json_data

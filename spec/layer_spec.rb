@@ -1,5 +1,3 @@
-require 'layer'
-
 describe Layer do
 
   let(:feature_layer) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0' }

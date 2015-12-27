@@ -1,6 +1,8 @@
-require 'feature_scraper'
-
 describe FeatureScraper do
+
+  before do
+    GisScraper.configure
+  end
 
   let(:scraper) { FeatureScraper.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0' }
   let(:bad_url_scraper) { FeatureScraper.new 'garbage' }
