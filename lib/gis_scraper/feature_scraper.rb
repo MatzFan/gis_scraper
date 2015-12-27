@@ -1,6 +1,3 @@
-require 'mechanize'
-require 'parallel'
-
 class JSONParser < Mechanize::File
   attr_reader :json
 
@@ -24,7 +21,7 @@ class FeatureScraper
     @max = max # maxRecordCount - usually 1000
     @form = form
     @loops = loops
-    @threads = 8 # seems optimum with some profiling
+    @threads = config[:threads]
   end
 
   def json_data

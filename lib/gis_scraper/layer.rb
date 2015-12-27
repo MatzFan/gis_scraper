@@ -1,7 +1,4 @@
-require 'mechanize'
 require 'fileutils'
-
-require_relative 'feature_scraper'
 
 class Layer
 
@@ -40,7 +37,7 @@ class Layer
     QUERYABLE.any? { |l| @type == l } ? write_json_files : process_sub_layers
   end
 
-  private #####################################################################å
+  private
 
   def ms_url
     @url.split('/')[0..-2].join('/')

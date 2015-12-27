@@ -1,8 +1,15 @@
+PATH
+  remote: .
+  specs:
+    gis_scraper (0.1.0.pre)
+      mechanize (~> 2.7)
+      parallel (~> 1.6)
+
 GEM
   remote: https://rubygems.org/
   specs:
     diff-lcs (1.2.5)
-    domain_name (0.5.24)
+    domain_name (0.5.25)
       unf (>= 0.0.5, < 1.0.0)
     http-cookie (1.0.2)
       domain_name (~> 0.5)
@@ -15,14 +22,15 @@ GEM
       nokogiri (~> 1.4)
       ntlm-http (~> 0.1, >= 0.1.1)
       webrobots (>= 0.0.9, < 0.2)
-    mime-types (2.6.1)
-    mini_portile (0.6.2)
+    mime-types (2.99)
+    mini_portile2 (2.0.0)
     net-http-digest_auth (1.4)
     net-http-persistent (2.9.4)
-    nokogiri (1.6.6.2)
-      mini_portile (~> 0.6.0)
+    nokogiri (1.6.7.1)
+      mini_portile2 (~> 2.0.0.rc2)
     ntlm-http (0.1.1)
     parallel (1.6.1)
+    rake (10.4.2)
     rspec (3.3.0)
       rspec-core (~> 3.3.0)
       rspec-expectations (~> 3.3.0)
@@ -45,9 +53,10 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  mechanize (~> 2.7)
-  parallel (~> 1.6)
-  rspec (~> 3.1)
+  bundler (~> 1.10)
+  gis_scraper!
+  rake (~> 10.0)
+  rspec (~> 3.0)
 
 BUNDLED WITH
    1.10.2
