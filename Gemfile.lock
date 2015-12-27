@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    gis_scraper (0.1.0.pre)
+    gis_scraper (0.1.1.pre)
       mechanize (~> 2.7)
       parallel (~> 1.6)
 
