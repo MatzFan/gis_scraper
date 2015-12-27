@@ -1,4 +1,5 @@
-# gis_scraper
+# gis_scraper Ruby Gem
+[![Gem Version](https://badge.fury.io/rb/gis_scraper.svg)](http://badge.fury.io/rb/gis_scraper)
 [![Build status](https://secure.travis-ci.org/MatzFan/gis_scraper.svg)](http://travis-ci.org/MatzFan/gis_scraper)
 
 Utility to recursively scrape ArcGIS MapServer data using REST API.
@@ -17,5 +18,5 @@ If the layer is type 'Feature Layer', a single file of JSON data will be saved (
 
 **Specification and Tests**
 
-rspec spec --format documentation
+rspec spec
 
