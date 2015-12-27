@@ -53,10 +53,10 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  bundler (~> 1.10)
+  bundler (~> 1.11)
   gis_scraper!
   rake (~> 10.0)
   rspec (~> 3.0)
 
 BUNDLED WITH
-   1.10.2
+   1.11.2
