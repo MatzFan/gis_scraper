@@ -1,10 +1,10 @@
-require 'gis_scraper/version'
-require 'gis_scraper/feature_scraper'
-require 'gis_scraper/layer'
-
 require 'yaml'
 require 'mechanize'
 require 'parallel'
+
+require 'gis_scraper/version'
+require 'gis_scraper/feature_scraper'
+require 'gis_scraper/layer'
 
 # stackoverflow.com/questions/6233124/where-to-place-access-config-file-in-gem
 module GisScraper
