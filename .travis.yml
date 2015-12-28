@@ -1,7 +1,7 @@
 language: ruby
 
-# addons:
-#   postgresql: "9.3"
+addons:
+  postgresql: "9.3"
 
 services:
   - postgresql
@@ -16,6 +16,7 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -y aptitude
   - sudo aptitude install -y libgdal-dev libproj-dev
+  - sudo apt-get install postgresql-9.3-postgis-2.1 # seems to be missing in Travis
 
 rvm:
   - 2.0.0
