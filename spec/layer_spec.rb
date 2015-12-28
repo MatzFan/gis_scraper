@@ -2,6 +2,7 @@ describe Layer do
 
   before do
     GisScraper.configure(output_path: 'tmp')
+    `mkdir -p tmp` # for Travis
   end
 
   def clean_tmp_dir
@@ -136,6 +137,13 @@ describe Layer do
       ensure
         clean_tmp_dir
       end
+    end
+  end
+
+  context '#output_to_db' do
+    it 'writes a single JSON layer file to a PostgresSQL database table with the same name (lowercased)' do
+      feature_layer.output_to_db
+      expect()
     end
   end
 
