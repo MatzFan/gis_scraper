@@ -10,7 +10,8 @@ require 'gis_scraper/layer'
 # stackoverflow.com/questions/6233124/where-to-place-access-config-file-in-gem
 module GisScraper
 
-  @config = {threads: 8, output_path: '.', db: 'postgres', user: 'postgres'}
+  @config = {threads: 8, output_path: '.',
+    host: 'localhost', port: 5432, dbname: 'postgres', user: 'postgres', password: nil}
   @valid_keys = @config.keys
 
   def self.configure(opts = {})

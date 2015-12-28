@@ -12,7 +12,7 @@ class Layer
   end
 
   class UnknownLayerType < StandardError; end
-
+  class NoDatabase < StandardError; end
   class OgrMissing < StandardError; end
 
   attr_reader :type, :id, :name
@@ -23,9 +23,10 @@ class Layer
            'Annotation SubLayer']
   QUERYABLE = ['Feature Layer', 'Annotation Layer']
 
+  CONN = [:host, :port, :dbname, :user, :password] # PG connection options
+
   def initialize(url, output_path = nil)
-    @user = ENV['POSTGRES_USER'] || GisScraper.config[:user]
-    @db = ENV['DB'] || GisScraper.config[:db]
+    @conn_hash = CONN.zip(CONN.map { |key| GisScraper.config[key] }).to_h
     @url = url
     @output_path = output_path || config_path
     @ms_url = ms_url # map server url ending '../MapServer'
@@ -43,20 +44,25 @@ class Layer
   end
 
   def output_to_db
-    raise OgrMissing.new, 'ogr2ogr missing, is GDAL installed?' unless ogr2ogr?
-    @output_path = 'tmp' # write all files to Gem's tmp dir
+    raise OgrMissing.new, 'ogr2ogr missing, is GDAL installed?' if !ogr2ogr?
+    raise NoDatabase.new, "No db connection: #{@conn_hash.inspect}" if !db?
+    @output_path = 'tmp' # write all files to the Gem's tmp dir
     output_json
     write_json_files_to_db_tables
   end
 
   private
 
-  def config_path
-    File.expand_path GisScraper.config[:output_path]
+  def db?
+    PG.connect(@conn_hash) rescue nil
   end
 
   def ogr2ogr?
     `ogr2ogr --version` rescue nil
+  end
+
+  def config_path
+    File.expand_path GisScraper.config[:output_path]
   end
 
   def ms_url
@@ -102,7 +108,22 @@ class Layer
   end
 
   def write_json_files_to_db_tables
-    `ogr2ogr -f "PostgreSQL" PG:"dbname=postgres user=#{@user}" "tmp/test.json" -nln test -a_srs EPSG:3109 -nlt POINT`
+    files.each do |f|
+      `ogr2ogr -f "PostgreSQL" PG:"#{conn}" "#{f}" -nln #{base(f)} -a_srs EPSG:3109 -nlt POINT`
+    end
+  end
+
+  def base(full_file_name)
+    full_file_name.split('/').last[0..-6].downcase
+  end
+
+  def files
+    Dir.glob('tmp/**/*.json')
+  end
+
+  def conn
+    host, port, db, user, pwd = *@conn_hash.values
+    "host=#{host} port=#{port} dbname=#{db} user=#{user} password=#{pwd}"
   end
 
   def process_sub_layers

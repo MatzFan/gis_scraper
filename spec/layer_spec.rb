@@ -5,6 +5,10 @@ describe Layer do
     `mkdir -p tmp` # for Travis
   end
 
+  def conn
+    PG.connect(dbname: ENV['DB'] || GisScraper.config[:dbname], user: ENV['POSTGRES_USER'] || GisScraper.config[:user])
+  end
+
   def clean_tmp_dir
      `rm -rf tmp/*`
   end
@@ -146,15 +150,36 @@ describe Layer do
       expect(->{feature_layer.output_to_db}).to raise_error Layer::OgrMissing
     end
 
+    it 'raises error NoDatabase if cannot connect to db with config options' do
+      allow_any_instance_of(Layer).to receive(:db?) { nil }
+      expect(->{feature_layer.output_to_db}).to raise_error Layer::NoDatabase
+    end
+
     it 'writes a single JSON layer file to a PostgresSQL database table with the same name (lowercased)' do
       begin
         `cp spec/fixtures/test.json tmp`
         feature_layer.send(:write_json_files_to_db_tables)
-        conn = PG.connect(dbname: ENV['DB'] || GisScraper.config[:db], user: ENV['POSTGRES_USER'] || GisScraper.config[:user])
         res = conn.exec("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
         expect(res[0]['table_name']).to eq 'test'
       ensure
-        conn.exec("DROP TABLE IF EXISTS test")
+        conn.exec 'drop schema public cascade;'
+        conn.exec 'create schema public;'
+        clean_tmp_dir
+      end
+    end
+
+    it 'writes a single JSON layer file to a PostgresSQL database table with the same name (lowercased)' do
+      begin
+        `mkdir tmp/dir`
+        `cp spec/fixtures/test.json tmp/dir`
+        `cp spec/fixtures/test.json tmp/test1.json`
+        feature_layer.send(:write_json_files_to_db_tables)
+        res = conn.exec("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+        expect(Dir.glob('tmp/**/*.json')).to eq ["tmp/dir/test.json", "tmp/test1.json"]
+        expect(res.map { |tup| tup['table_name'] }.sort).to eq ['test', 'test1']
+      ensure
+       conn.exec 'drop schema public cascade;'
+        conn.exec 'create schema public;'
         clean_tmp_dir
       end
     end

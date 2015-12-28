@@ -35,6 +35,14 @@ Configuration options may be set via a hash or specified in a Yaml file. The fol
 - ```:threads``` Scraping is multi-threaded. The number of threads to use may be set with this option (default 8)
 - ```:output_path```    For JSON output, the path used to write files to (default is current working directory)
 
+The following options are used to connect to a database:
+
+- ```:host``` default 'localhost'
+- ```:port``` default  5432
+- ```:dbname``` default 'postgres'
+- ```:user``` default 'postgres'
+- ```:password``` default nil
+
 **To set via a hash**
 
 ```Ruby
@@ -74,6 +82,8 @@ layer.output_json
 If the layer is type 'Feature Layer', a single file of JSON data will be saved (named the same as the layer). If the layer is type 'Group Layer', the sub-group structure is traversed recursively thus: Directories for each sub-group layer are created and JSON data files for each constituent feature layer written to them.
 
 **Output to a database**
+
+Valid database config options must be set. The following command will convert JSON files, create tables for each layer (& sub-layers, if any) and import the data.
 
 ```
 layer.output_to_db
