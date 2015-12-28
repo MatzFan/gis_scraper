@@ -141,9 +141,22 @@ describe Layer do
   end
 
   context '#output_to_db' do
+    it 'raises error OgrMissing if ogr2ogr executable is not found' do
+      allow_any_instance_of(Layer).to receive(:ogr2ogr?) { nil }
+      expect(->{feature_layer.output_to_db}).to raise_error Layer::OgrMissing
+    end
+
     it 'writes a single JSON layer file to a PostgresSQL database table with the same name (lowercased)' do
-      feature_layer.output_to_db
-      expect()
+      begin
+        `cp spec/fixtures/test.json tmp`
+        feature_layer.send(:write_json_files_to_db_tables)
+        conn = PG.connect(dbname: 'postgres')
+        res = conn.exec("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+        expect(res[0]['table_name']).to eq 'test'
+      ensure
+        conn.exec("DROP TABLE IF EXISTS test")
+        clean_tmp_dir
+      end
     end
   end
 

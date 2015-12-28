@@ -1,6 +1,7 @@
 require 'yaml'
 require 'mechanize'
 require 'parallel'
+require 'pg'
 
 require 'gis_scraper/version'
 require 'gis_scraper/feature_scraper'

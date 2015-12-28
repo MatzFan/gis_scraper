@@ -32,8 +32,8 @@ Or install it yourself as:
 
 Configuration options may be set via a hash or specified in a Yaml file. The following options are available:
 
-```:threads``` Scraping is multi-threaded. The number of threads to use may be set with this option (default 8)
-```:output_path```    For JSON output, the path used to write files to (default is current working directory)
+- ```:threads``` Scraping is multi-threaded. The number of threads to use may be set with this option (default 8)
+- ```:output_path```    For JSON output, the path used to write files to (default is current working directory)
 
 **To set via a hash**
 
@@ -56,24 +56,28 @@ GisScraper.config # returns the hash of configuration values
 A Layer object must be instantiated with one required arg - a MapServer/Layer URL (ending in an integer representing the layer number). Example:
 
 ```
-Layer.new('http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0')
+layer = Layer.new('http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0')
 ```
 
 An optional second argument for the output path for JSON files may be specified. If so this overides the configuration option. Example:
 
 ```
-Layer.new('http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0', '~/Desktop')
+layer = Layer.new('http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0', '~/Desktop')
 ```
 
 **JSON output**
 
-JSON files will be saved in current directory unless a ```:path``` value has been specified in the configuration.
+```
+layer.output_json
+```
 
 If the layer is type 'Feature Layer', a single file of JSON data will be saved (named the same as the layer). If the layer is type 'Group Layer', the sub-group structure is traversed recursively thus: Directories for each sub-group layer are created and JSON data files for each constituent feature layer written to them.
 
 **Output to a database**
 
-The executable is called ```gis2pg``` and takes
+```
+layer.output_to_db
+```
 
 ## Specification and Tests
 

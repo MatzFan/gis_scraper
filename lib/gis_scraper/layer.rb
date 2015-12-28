@@ -13,6 +13,8 @@ class Layer
 
   class UnknownLayerType < StandardError; end
 
+  class OgrMissing < StandardError; end
+
   attr_reader :type, :id, :name
 
   TYPES = ['Group Layer',
@@ -38,14 +40,21 @@ class Layer
     QUERYABLE.any? { |l| @type == l } ? write_json_files : process_sub_layers
   end
 
-  def output_pg
-    QUERYABLE.any? { |l| @type == l } ? write_pg_tables : process_sub_layers
+  def output_to_db
+    raise OgrMissing.new, 'ogr2ogr missing, is GDAL installed?' unless ogr2ogr?
+    @output_path = 'tmp' # write all files to Gem's tmp dir
+    output_json
+    write_json_files_to_db_tables
   end
 
   private
 
   def config_path
     File.expand_path GisScraper.config[:output_path]
+  end
+
+  def ogr2ogr?
+    `ogr2ogr --version` rescue nil
   end
 
   def ms_url
@@ -90,19 +99,19 @@ class Layer
     File.write "#{@output_path}/#{@name}.json", json_data("#{@ms_url}/#{@id}")
   end
 
-  # def write_pg_tables
-  #   `ogr2ogr -f "PostgreSQL" PG:"dbname=base user=me" "Landparcels.json" -nln landparcels -a_srs EPSG:3109 -nlt MULTIPOLYGON`
-  # end
+  def write_json_files_to_db_tables
+     `ogr2ogr -f "PostgreSQL" PG:"dbname=postgres user=me" "tmp/test.json" -nln test -a_srs EPSG:3109 -nlt POINT`
+  end
 
   def process_sub_layers
     sub_layer_id_names.each do |hash|
       name, id = hash['name'], hash['id']
       path = "#{@output_path}/#{name}"
-      recurse sub_layer(id, path), path
+      recurse_json sub_layer(id, path), path
     end
   end
 
-  def recurse(layer, dir)
+  def recurse_json(layer, dir)
     FileUtils.mkdir dir
     layer.output_json
   end

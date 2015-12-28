@@ -26,4 +26,5 @@ Gem::Specification.new do |s|
 
   s.add_runtime_dependency 'mechanize', '~> 2.7'
   s.add_runtime_dependency 'parallel', '~> 1.6'
+  s.add_development_dependency 'pg', '~> 0.18'
 end

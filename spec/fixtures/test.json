@@ -1,0 +1,184 @@
+{
+  "displayFieldName": "Add1",
+  "fieldAliases": {
+    "OBJECTID": "OBJECTID",
+    "guid_": "guid_",
+    "Add1": "Add1",
+    "Add2": "Add2",
+    "Add3": "Add3",
+    "Add4": "Add4",
+    "Parish": "Parish",
+    "Postcode": "Postcode",
+    "Island": "Island",
+    "UPRN": "UPRN",
+    "USRN": "USRN",
+    "Address1": "Address1",
+    "Easting": "Easting",
+    "Northing": "Northing",
+    "Vingtaine": "Vingtaine",
+    "Updated": "Updated",
+    "logicalstatus": "logicalstatus",
+    "Property_Type": "Property_Type"
+  },
+  "geometryType": "esriGeometryPoint",
+  "spatialReference": {
+    "wkt": "PROJCS[\"NewJTM\",GEOGCS[\"GCS_ETRF_1989\",DATUM[\"D_ETRF_1989\",SPHEROID[\"WGS_1984\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"False_Easting\",40000.0],PARAMETER[\"False_Northing\",70000.0],PARAMETER[\"Central_Meridian\",-2.135],PARAMETER[\"Scale_Factor\",0.9999999],PARAMETER[\"Latitude_Of_Origin\",49.225],UNIT[\"Meter\",1.0]],VERTCS[\"MSL_Height\",VDATUM[\"Mean_Sea_Level\"],PARAMETER[\"Vertical_Shift\",0.0],PARAMETER[\"Direction\",1.0],UNIT[\"Meter\",1.0]]"
+  },
+  "fields": [
+    {
+      "name": "OBJECTID",
+      "type": "esriFieldTypeOID",
+      "alias": "OBJECTID"
+    },
+    {
+      "name": "guid_",
+      "type": "esriFieldTypeInteger",
+      "alias": "guid_"
+    },
+    {
+      "name": "Add1",
+      "type": "esriFieldTypeString",
+      "alias": "Add1",
+      "length": 255
+    },
+    {
+      "name": "Add2",
+      "type": "esriFieldTypeString",
+      "alias": "Add2",
+      "length": 255
+    },
+    {
+      "name": "Add3",
+      "type": "esriFieldTypeString",
+      "alias": "Add3",
+      "length": 255
+    },
+    {
+      "name": "Add4",
+      "type": "esriFieldTypeString",
+      "alias": "Add4",
+      "length": 255
+    },
+    {
+      "name": "Parish",
+      "type": "esriFieldTypeString",
+      "alias": "Parish",
+      "length": 255
+    },
+    {
+      "name": "Postcode",
+      "type": "esriFieldTypeString",
+      "alias": "Postcode",
+      "length": 255
+    },
+    {
+      "name": "Island",
+      "type": "esriFieldTypeString",
+      "alias": "Island",
+      "length": 255
+    },
+    {
+      "name": "UPRN",
+      "type": "esriFieldTypeInteger",
+      "alias": "UPRN"
+    },
+    {
+      "name": "USRN",
+      "type": "esriFieldTypeInteger",
+      "alias": "USRN"
+    },
+    {
+      "name": "Address1",
+      "type": "esriFieldTypeString",
+      "alias": "Address1",
+      "length": 255
+    },
+    {
+      "name": "Easting",
+      "type": "esriFieldTypeDouble",
+      "alias": "Easting"
+    },
+    {
+      "name": "Northing",
+      "type": "esriFieldTypeDouble",
+      "alias": "Northing"
+    },
+    {
+      "name": "Vingtaine",
+      "type": "esriFieldTypeString",
+      "alias": "Vingtaine",
+      "length": 255
+    },
+    {
+      "name": "Updated",
+      "type": "esriFieldTypeDate",
+      "alias": "Updated",
+      "length": 8
+    },
+    {
+      "name": "logicalstatus",
+      "type": "esriFieldTypeInteger",
+      "alias": "logicalstatus"
+    },
+    {
+      "name": "Property_Type",
+      "type": "esriFieldTypeString",
+      "alias": "Property_Type",
+      "length": 255
+    }
+  ],
+  "features": [
+    {
+      "attributes": {
+        "OBJECTID": 1,
+        "guid_": 27444,
+        "Add1": "Bethesda Methodist Church",
+        "Add2": "La Route Du Moulin",
+        "Add3": "",
+        "Add4": "",
+        "Parish": "ST. PETER",
+        "Postcode": "JE3 7FR",
+        "Island": "Jersey",
+        "UPRN": 69200965,
+        "USRN": 40000472,
+        "Address1": "BETHESDA METHODIST CHURCH,LA ROUTE DU MOULIN,",
+        "Easting": 34407.300000000003,
+        "Northing": 68555.5,
+        "Vingtaine": "Grande",
+        "Updated": 1054166400000,
+        "logicalstatus": 1,
+        "Property_Type": "Commercial"
+      },
+      "geometry": {
+        "x": 34407.299999999814,
+        "y": 68555.5
+      }
+    },
+    {
+      "attributes": {
+        "OBJECTID": 2,
+        "guid_": 36870,
+        "Add1": "Field No. 329",
+        "Add2": "Highfield Lane",
+        "Add3": "",
+        "Add4": "Les Grands Vaux",
+        "Parish": "ST. SAVIOUR",
+        "Postcode": " ",
+        "Island": "Jersey",
+        "UPRN": 69217246,
+        "USRN": 40001821,
+        "Address1": "FIELD NO. 329,HIGHFIELD LANE,LES GRANDS VAUX",
+        "Easting": 43842.800000000003,
+        "Northing": 67569.5,
+        "Vingtaine": "Pigneaux",
+        "Updated": 1094428800000,
+        "logicalstatus": 1,
+        "Property_Type": "Agricultural"
+      },
+      "geometry": {
+        "x": 43842.799999999814,
+        "y": 67569.5
+      }
+    }
+  ]
+}
