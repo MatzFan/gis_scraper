@@ -24,6 +24,7 @@ class Layer
   QUERYABLE = ['Feature Layer', 'Annotation Layer']
 
   def initialize(url, output_path = nil)
+    @user = GisScraper.config[:user]
     @url = url
     @output_path = output_path || config_path
     @ms_url = ms_url # map server url ending '../MapServer'
@@ -100,7 +101,7 @@ class Layer
   end
 
   def write_json_files_to_db_tables
-    `ogr2ogr -f "PostgreSQL" PG:"dbname=postgres user=me" "tmp/test.json" -nln test -a_srs EPSG:3109 -nlt POINT`
+    `ogr2ogr -f "PostgreSQL" PG:"dbname=postgres user=#{@user}" "tmp/test.json" -nln test -a_srs EPSG:3109 -nlt POINT`
   end
 
   def process_sub_layers

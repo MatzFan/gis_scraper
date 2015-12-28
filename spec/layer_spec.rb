@@ -1,7 +1,7 @@
 describe Layer do
 
   before do
-    GisScraper.configure(output_path: 'tmp')
+    GisScraper.configure(output_path: 'tmp', user: 'me')
     `mkdir -p tmp` # for Travis
   end
 
@@ -150,7 +150,7 @@ describe Layer do
       begin
         `cp spec/fixtures/test.json tmp`
         feature_layer.send(:write_json_files_to_db_tables)
-        conn = PG.connect(dbname: 'postgres')
+        conn = PG.connect(dbname: 'postgres', user: ENV['POSTGRES_USER'] || GisScraper.config[:user])
         res = conn.exec("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
         expect(res[0]['table_name']).to eq 'test'
       ensure
