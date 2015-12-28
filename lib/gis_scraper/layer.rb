@@ -24,7 +24,8 @@ class Layer
   QUERYABLE = ['Feature Layer', 'Annotation Layer']
 
   def initialize(url, output_path = nil)
-    @user = GisScraper.config[:user]
+    @user = ENV['POSTGRES_USER'] || GisScraper.config[:user]
+    @db = ENV['DB'] || GisScraper.config[:db]
     @url = url
     @output_path = output_path || config_path
     @ms_url = ms_url # map server url ending '../MapServer'
