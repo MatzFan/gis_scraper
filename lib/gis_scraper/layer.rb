@@ -100,7 +100,7 @@ class Layer
   end
 
   def write_json_files_to_db_tables
-     `ogr2ogr -f "PostgreSQL" PG:"dbname=postgres user=me" "tmp/test.json" -nln test -a_srs EPSG:3109 -nlt POINT`
+    `ogr2ogr -f "PostgreSQL" PG:"dbname=postgres user=me" "tmp/test.json" -nln test -a_srs EPSG:3109 -nlt POINT`
   end
 
   def process_sub_layers
