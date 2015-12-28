@@ -21,8 +21,9 @@ class Layer
            'Annotation SubLayer']
   QUERYABLE = ['Feature Layer', 'Annotation Layer']
 
-  def initialize(url, path = '.')
-    @url, @path = url, File.expand_path(path)
+  def initialize(url, output_path = nil)
+    @url = url
+    @output_path = output_path || config_path
     @ms_url = ms_url # map server url ending '../MapServer'
     @id = id
     @agent = Mechanize.new
@@ -33,11 +34,19 @@ class Layer
     @name = name
   end
 
-  def write
+  def output_json
     QUERYABLE.any? { |l| @type == l } ? write_json_files : process_sub_layers
   end
 
+  def output_pg
+    QUERYABLE.any? { |l| @type == l } ? write_pg_tables : process_sub_layers
+  end
+
   private
+
+  def config_path
+    File.expand_path GisScraper.config[:output_path]
+  end
 
   def ms_url
     @url.split('/')[0..-2].join('/')
@@ -78,20 +87,24 @@ class Layer
   end
 
   def write_json_files
-    File.write "#{@path}/#{@name}.json", json_data("#{@ms_url}/#{@id}")
+    File.write "#{@output_path}/#{@name}.json", json_data("#{@ms_url}/#{@id}")
   end
+
+  # def write_pg_tables
+  #   `ogr2ogr -f "PostgreSQL" PG:"dbname=base user=me" "Landparcels.json" -nln landparcels -a_srs EPSG:3109 -nlt MULTIPOLYGON`
+  # end
 
   def process_sub_layers
     sub_layer_id_names.each do |hash|
       name, id = hash['name'], hash['id']
-      path = "#{@path}/#{name}"
+      path = "#{@output_path}/#{name}"
       recurse sub_layer(id, path), path
     end
   end
 
   def recurse(layer, dir)
     FileUtils.mkdir dir
-    layer.write
+    layer.output_json
   end
 
   def sub_layer(id, path)

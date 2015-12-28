@@ -1,7 +1,0 @@
-#!/usr/bin/env ruby
-
-require 'gis_scraper'
-
-start = Time.now
-Layer.new(*ARGV).write
-puts "Finished in #{Time.now - start} seconds"

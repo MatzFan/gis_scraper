@@ -12,6 +12,7 @@ Gem::Specification.new do |s|
 
   s.summary       = %q{Scrapes ArcGIS data from MapServer REST API}
   s.description   = %q{Scrapes ArcGIS data from MapServer REST API}
+  s.required_ruby_version = '>= 2.0'
   s.license       = "MIT"
 
   s.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(spec)/}) }

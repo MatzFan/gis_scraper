@@ -8,9 +8,9 @@ ArcGIS MapServer REST queries are limited to 1,000 objects in some cases. This t
 
 ## Requirements
 
-See Travis badge for tested Ruby versions.
+Ruby 2.0 or above - see Travis badge for tested Ruby versions.
 
-For data import to a database [GDAL](http://gdal.org) must be installed and specifically the ogr2ogr executable must be available in your path.
+For data import to a database [GDAL](http://gdal.org) must be installed and specifically the [ogr2ogr](http://www.gdal.org/ogr2ogr.html) executable must be available in your path.
 
 # Installation
 
@@ -30,33 +30,50 @@ Or install it yourself as:
 
 ## Configuration
 
-Config settings may be set via a hash or a Yaml file.
+Configuration options may be set via a hash or specified in a Yaml file. The following options are available:
 
-**Via a hash**
+```:threads``` Scraping is multi-threaded. The number of threads to use may be set with this option (default 8)
+```:output_path```    For JSON output, the path used to write files to (default is current working directory)
 
-Scraping is multi-threaded. The number of threads to use may be set (default 8):
+**To set via a hash**
+
 ```Ruby
 GisScraper.configure(:threads => 16)
 ```
 
-**From a Yaml configuration file**
+**Using a Yaml configuration file**
+
 ```Ruby
 GisScraper.configure_with 'path-to-Yaml-file'
 ```
 
 ```Ruby
-GisScraper.config # returns the configuration hash
+GisScraper.config # returns the hash of configuration values
 ```
 
 ## Usage
 
-The executable is called 'gisget' and takes one required arg - a MapServer/Layer URL (ending in an integer representing the layer number). An optional file output path may also be specified. If omitted the file will be saved in current directory. Example:
+A Layer object must be instantiated with one required arg - a MapServer/Layer URL (ending in an integer representing the layer number). Example:
 
 ```
-gisget http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0 ~/Desktop
+Layer.new('http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0')
 ```
+
+An optional second argument for the output path for JSON files may be specified. If so this overides the configuration option. Example:
+
+```
+Layer.new('http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0', '~/Desktop')
+```
+
+**JSON output**
+
+JSON files will be saved in current directory unless a ```:path``` value has been specified in the configuration.
 
 If the layer is type 'Feature Layer', a single file of JSON data will be saved (named the same as the layer). If the layer is type 'Group Layer', the sub-group structure is traversed recursively thus: Directories for each sub-group layer are created and JSON data files for each constituent feature layer written to them.
+
+**Output to a database**
+
+The executable is called ```gis2pg``` and takes
 
 ## Specification and Tests
 

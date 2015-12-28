@@ -1,12 +1,20 @@
 describe Layer do
 
+  before do
+    GisScraper.configure(output_path: 'tmp')
+  end
+
+  def clean_tmp_dir
+     `rm -rf tmp/*`
+  end
+
   let(:feature_layer) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0' }
-  let(:group_layer) { Layer.new('http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/146', __dir__) }
+  let(:group_layer) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/146' }
   let(:no_layer_id_url) { Layer.new 'no/layer/number/specified/MapServer' }
   let(:not_map_server_url) { Layer.new '"MapServer"/missing/42' }
-  let(:feature_layer_with_path) { Layer.new('http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/11', __dir__) }
-  let(:feature_layer_unsafe_characters) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/14', __dir__ }
-  let(:layer_with_sub_group_layers) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/129', __dir__ }
+  let(:feature_layer_with_path) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/11' }
+  let(:feature_layer_unsafe_characters) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/14' }
+  let(:layer_with_sub_group_layers) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/129' }
   let(:annotation_layer) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/8' }
   sub_layers = [{'id' => 130, 'name' => 'High Pressure'},
                 {'id' => 133, 'name' => 'Medium Pressure'},
@@ -19,11 +27,11 @@ describe Layer do
       expect(->{no_layer_id_url}).to raise_error ArgumentError, 'URL must end with layer id'
     end
 
-    it 'raises ArgumentError "Bad MapServer URL" with a URL not ending in an integer' do
+    it 'raises ArgumentError "Bad MapServer URL" with a URL not ending "MapServer/<integer>"' do
       expect(->{not_map_server_url}).to raise_error ArgumentError, 'Bad MapServer URL'
     end
 
-    it 'instantiates an instance of the class with no second arg' do
+    it 'instantiates an instance of the class with a valid MapServer layer url string' do
       expect(feature_layer.class).to eq Layer
     end
   end
@@ -60,9 +68,9 @@ describe Layer do
       layer = feature_layer_with_path
       begin
         layer.send :write_json_files
-        expect(`ls ./spec`).to include file_name
+        expect(`ls tmp`).to include file_name
       ensure
-        File.delete File.new(File.join __dir__, file_name) rescue nil # cleanup
+        clean_tmp_dir
       end
     end
 
@@ -71,28 +79,28 @@ describe Layer do
       layer = feature_layer_unsafe_characters
       begin
         layer.send :write_json_files
-        expect(`ls ./spec`).to include file_name
+        expect(`ls tmp`).to include file_name
       ensure
-        File.delete File.new(File.join __dir__, file_name) rescue nil # cleanup
+        clean_tmp_dir
       end
     end
   end
 
-  context '#sub_layer(id)' do
+  context '#sub_layer(id, path)' do
     it 'returns the a Layer object for the given the sub layer id' do
-      expect(layer_with_sub_group_layers.send(:sub_layer, 130, __dir__).class). to eq Layer
+      expect(layer_with_sub_group_layers.send(:sub_layer, 130, 'tmp').class). to eq Layer
     end
   end
 
-  context '#write', :public do
+  context '#output_json', :public do
     it 'calls #write_json_files for an annotation layer' do
       layer = annotation_layer
       allow_any_instance_of(Layer).to receive(:json_data) { nil }
       begin
-        layer.write
-        expect(`ls`).to include 'Annotation6.json'
+        layer.output_json
+        expect(`ls tmp`).to include 'Annotation6.json'
       ensure
-        FileUtils.rm 'Annotation6.json'
+        clean_tmp_dir
       end
     end
 
@@ -100,10 +108,10 @@ describe Layer do
       layer = feature_layer
       allow_any_instance_of(Layer).to receive(:json_data) { nil }
       begin
-        layer.write
-        expect(`ls`).to include 'Gazetteer.json'
+        layer.output_json
+        expect(`ls tmp`).to include 'Gazetteer.json'
       ensure
-        FileUtils.rm 'Gazetteer.json'
+        clean_tmp_dir
       end
     end
 
@@ -111,10 +119,10 @@ describe Layer do
       dir_names = ['High Pressure', 'Medium Pressure', 'Low Pressure']
       allow_any_instance_of(Layer).to receive :write_json_files # stub recursive instances, so nothing is scraped!!
       begin
-        layer_with_sub_group_layers.write
-        dir_names.all? { |dir| expect(`ls ./spec`).to include dir }
+        layer_with_sub_group_layers.output_json
+        dir_names.all? { |dir| expect(`ls tmp`).to include dir }
       ensure
-        dir_names.each { |dir_name| FileUtils.rm_rf "#{__dir__}/#{dir_name}" rescue nil } # cleanup
+        clean_tmp_dir
       end
     end
 
@@ -123,10 +131,10 @@ describe Layer do
       shell_safe_dir_names = dir_names.map { |str| str.gsub(' ', '\ ') }
       allow_any_instance_of(Layer).to receive(:json_data) { {} } # stub recursive instances, so nothing is scraped!!
       begin
-        layer_with_sub_group_layers.write
-        shell_safe_dir_names.all? { |dir| expect(`ls ./spec/#{dir} | wc -l`.chomp.to_i).to eq 2 } # 2 json files should be written to each dir
+        layer_with_sub_group_layers.output_json
+        shell_safe_dir_names.all? { |dir| expect(`ls tmp/#{dir} | wc -l`.chomp.to_i).to eq 2 } # 2 json files should be written to each dir
       ensure
-        dir_names.each { |dir_name| FileUtils.rm_rf "#{__dir__}/#{dir_name}" rescue nil } # cleanup
+        clean_tmp_dir
       end
     end
   end

@@ -9,7 +9,7 @@ require 'gis_scraper/layer'
 # stackoverflow.com/questions/6233124/where-to-place-access-config-file-in-gem
 module GisScraper
 
-  @config = {threads: 8} # threads used for scraping
+  @config = {threads: 8, output_path: '.'} # threads used for scraping
   @valid_keys = @config.keys
 
   def self.configure(opts = {})
