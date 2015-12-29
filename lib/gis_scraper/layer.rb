@@ -25,6 +25,15 @@ class Layer
 
   CONN = [:host, :port, :dbname, :user, :password] # PG connection options
 
+  GEOM_TYPES = {esriGeometryPoint: 'POINT',
+                esriGeometryMultipoint: 'MULTIPOINT',
+                esriGeometryLine: 'LINESTRING',
+                esriGeometryPolyline: 'MULTILINESTRING',
+                esriGeometryPolygon: 'MULTIPOLYGON'}
+
+
+  OGR2OGR = 'ogr2ogr -f "PostgreSQL" PG:'
+
   def initialize(url, output_path = nil)
     @conn_hash = CONN.zip(CONN.map { |key| GisScraper.config[key] }).to_h
     @url = url
@@ -109,8 +118,22 @@ class Layer
 
   def write_json_files_to_db_tables
     files.each do |f|
-      `ogr2ogr -f "PostgreSQL" PG:"#{conn}" "#{f}" -nln #{base(f)} -a_srs EPSG:3109 -nlt POINT`
+      `#{OGR2OGR}"#{conn}" "#{f}" -nln #{base(f)} #{srs} -nlt #{geom(f)}`
     end
+  end
+
+  def geom(file)
+    esri = esri_geom(file)
+    GEOM_TYPES[esri.to_sym] || raise("Unknown geometry type: '#{esri}'")
+  end
+
+  def esri_geom(file)
+    JSON.parse(File.read(file))['geometryType']
+  end
+
+  def srs
+    return '' unless GisScraper.config[:srs]
+    "-a_srs #{GisScraper.config[:srs]}" || ''
   end
 
   def base(full_file_name)

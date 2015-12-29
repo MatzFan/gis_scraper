@@ -1,7 +1,7 @@
 describe Layer do
 
   before do
-    GisScraper.configure(output_path: 'tmp', user: 'me')
+    GisScraper.configure(output_path: 'tmp', user: 'me', srs: 'EPSG:3109')
     `mkdir -p tmp` # for Travis
   end
 
@@ -175,13 +175,29 @@ describe Layer do
         `cp spec/fixtures/test.json tmp/test1.json`
         feature_layer.send(:write_json_files_to_db_tables)
         res = conn.exec("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
-        expect(Dir.glob('tmp/**/*.json')).to eq ["tmp/dir/test.json", "tmp/test1.json"]
         expect(res.map { |tup| tup['table_name'] }.sort).to eq ['test', 'test1']
       ensure
-       conn.exec 'drop schema public cascade;'
+        conn.exec 'drop schema public cascade;'
         conn.exec 'create schema public;'
         clean_tmp_dir
       end
+    end
+  end
+
+  context '#esri_geom' do
+    it 'returns the esri geometry type from a JSON file' do
+      expect(feature_layer.send(:esri_geom, 'spec/fixtures/test.json')).to eq 'esriGeometryPoint'
+    end
+  end
+
+  context '#geom' do
+    it 'raises error "Unknown geometry type: <esri geometry>" if the layer has an unknown type' do
+      allow_any_instance_of(Layer).to receive(:esri_geom).with('esriGeometryPoint') { 'esriGeometryUnknown' }
+      expect(->{feature_layer.send(:geom, 'esriGeometryPoint')}).to raise_error "Unknown geometry type: 'esriGeometryUnknown'"
+    end
+
+    it 'returns the esri geometry type from a JSON file' do
+      expect(feature_layer.send(:esri_geom, 'spec/fixtures/test.json')).to eq 'esriGeometryPoint'
     end
   end
 
