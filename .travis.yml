@@ -8,7 +8,7 @@ services:
 
 before_script:
   - psql -c 'create database travis_ci_test;' -U postgres
-  - psql -U postgres -c "create extension postgis" -U postgres -d travis_ci_test
+  - psql -U postgres -c 'create extension postgis;'
 
 before_install:
   - gem update bundler
