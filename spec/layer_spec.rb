@@ -23,7 +23,8 @@ describe Layer do
   let(:layer_with_sub_group_layers) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/129' }
   let(:annotation_layer) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/8' }
   let(:sub_layer_ids) { [130, 133, 136] }
-  dir_names = ['tmp/Jersey Gas/High Pressure', 'tmp/Jersey Gas/Low Pressure', 'tmp/Jersey Gas/Medium Pressure']
+  let(:dir_names) { ['tmp/Jersey Gas/High Pressure', 'tmp/Jersey Gas/Low Pressure', 'tmp/Jersey Gas/Medium Pressure'] }
+  let(:tables) { ["gas high pressure main", "gas low pressure main", "gas medium pressure main", "high_pressure_asset", "low_pressure_asset", "medium_pressure_asset"] }
 
   let(:scraper_double) { instance_double 'FeatureScraper' }
 
@@ -67,11 +68,11 @@ describe Layer do
     end
   end
 
-  context '#write_json_files' do
+  context '#write_json' do
     it "writes a feature layer's data to a JSON file to configured path if no path is specified" do
       layer = feature_layer
       begin
-        layer.send :write_json_files
+        layer.send :write_json
         expect(Dir['tmp/*']).to include "tmp/#{file_name}"
       ensure
         clean_tmp_dir
@@ -81,7 +82,7 @@ describe Layer do
     it "writes a feature layer's data to a JSON file to the path specified" do
       layer = feature_layer_with_path
       begin
-        layer.send :write_json_files
+        layer.send :write_json
         expect(Dir['/Users/me/Desktop/*']).to include "/Users/me/Desktop/#{file_name}"
       ensure
         `rm ~/Desktop/#{Shellwords.escape(file_name)}`
@@ -92,7 +93,7 @@ describe Layer do
       file_name = 'Mineral_Sand Extraction Site.json'
       layer = feature_layer_unsafe_characters
       begin
-        layer.send :write_json_files
+        layer.send :write_json
         expect(Dir['tmp/*']).to include "tmp/#{file_name}"
       ensure
         clean_tmp_dir
@@ -112,7 +113,7 @@ describe Layer do
       end
     end
 
-    it 'calls #write_json_files for a feature layer' do
+    it 'calls #write_json for a feature layer' do
       layer = feature_layer
       allow_any_instance_of(Layer).to receive(:json_data) { nil }
       begin
@@ -156,49 +157,45 @@ describe Layer do
       expect(->{feature_layer.output_to_db}).to raise_error Layer::NoDatabase
     end
 
-    # it 'writes a single JSON layer file to a PostgresSQL database table with the same name (lowercased)' do
-    #   begin
-    #     `cp spec/fixtures/test.json tmp`
-    #     feature_layer.send(:write_json_files_to_db_tables)
-    #     res = conn.exec("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
-    #     expect(res[0]['table_name']).to eq 'test'
-    #   ensure
-    #     conn.exec 'drop schema public cascade;'
-    #     conn.exec 'create schema public;'
-    #     clean_tmp_dir
-    #   end
-    # end
+    it 'writes a single JSON layer file to a PostgresSQL database table with the same name (lowercased)' do
+      begin
+        feature_layer.output_to_db
+        res = conn.exec("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+        expect(res[0]['table_name']).to eq 'aircraft noise zone 1'
+      ensure
+        conn.exec 'drop schema public cascade;'
+        conn.exec 'create schema public;'
+        clean_tmp_dir
+      end
+    end
 
-    # it 'writes a single JSON layer file to a PostgresSQL database table with the same name (lowercased)' do
-    #   begin
-    #     `mkdir tmp/dir`
-    #     `cp spec/fixtures/test.json tmp/dir`
-    #     `cp spec/fixtures/test.json tmp/test1.json`
-    #     feature_layer.send(:write_json_files_to_db_tables)
-    #     res = conn.exec("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
-    #     expect(res.map { |tup| tup['table_name'] }.sort).to eq ['test', 'test1']
-    #   ensure
-    #     conn.exec 'drop schema public cascade;'
-    #     conn.exec 'create schema public;'
-    #     clean_tmp_dir
-    #   end
-    # end
+    it 'writes a set of JSON layer files to PostgresSQL database tables for a group layer' do
+      begin
+        layer_with_sub_group_layers.output_to_db
+        res = conn.exec("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+        expect(res.map { |tup| tup['table_name'] }.sort).to eq tables
+      ensure
+        conn.exec 'drop schema public cascade;'
+        conn.exec 'create schema public;'
+        clean_tmp_dir
+      end
+    end
   end
 
   context '#esri_geom' do
     it 'returns the esri geometry type from a JSON file' do
-      expect(feature_layer.send(:esri_geom, 'spec/fixtures/test.json')).to eq 'esriGeometryPoint'
+      expect(feature_layer.send(:esri_geom)).to eq 'esriGeometryPolygon'
     end
   end
 
   context '#geom' do
-    it 'raises error "Unknown geometry type: <esri geometry>" if the layer has an unknown type' do
-      allow_any_instance_of(Layer).to receive(:esri_geom).with('esriGeometryPoint') { 'esriGeometryUnknown' }
-      expect(->{feature_layer.send(:geom, 'esriGeometryPoint')}).to raise_error "Unknown geometry type: 'esriGeometryUnknown'"
+    it 'returns the PostGIS geometry type from a JSON file' do
+      expect(feature_layer.send(:geom)).to eq 'MULTIPOLYGON'
     end
 
-    it 'returns the esri geometry type from a JSON file' do
-      expect(feature_layer.send(:esri_geom, 'spec/fixtures/test.json')).to eq 'esriGeometryPoint'
+    it 'raises error "Unknown geometry type: <esri geometry>" if the layer has an unknown type' do
+      allow_any_instance_of(Layer).to receive(:esri_geom) { 'esriGeometryUnknown' }
+      expect(->{feature_layer.send(:geom)}).to raise_error "Unknown geometry: 'esriGeometryUnknown' for layer Aircraft Noise Zone 1"
     end
   end
 

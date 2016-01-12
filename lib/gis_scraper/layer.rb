@@ -26,11 +26,11 @@ class Layer
 
   CONN = [:host, :port, :dbname, :user, :password] # PG connection options
 
-  GEOM_TYPES = {esriGeometryPoint: 'POINT',
-                esriGeometryMultipoint: 'MULTIPOINT',
-                esriGeometryLine: 'LINESTRING',
-                esriGeometryPolyline: 'MULTILINESTRING',
-                esriGeometryPolygon: 'MULTIPOLYGON'}
+  GEOM_TYPES = {'esriGeometryPoint' => 'POINT',
+                'esriGeometryMultipoint' => 'MULTIPOINT',
+                'esriGeometryLine' => 'LINESTRING',
+                'esriGeometryPolyline' => 'MULTILINESTRING',
+                'esriGeometryPolygon' => 'MULTIPOLYGON'}
 
 
   OGR2OGR = 'ogr2ogr -f "PostgreSQL" PG:'
@@ -51,15 +51,14 @@ class Layer
   end
 
   def output_json
-    QUERYABLE.any? { |l| @type == l } ? write_json_files : process_sub_layers
+    QUERYABLE.any? { |l| @type == l } ? write_json : do_sub_layers(__method__)
   end
 
   def output_to_db
     raise OgrMissing.new, 'ogr2ogr missing, is GDAL installed?' if !ogr2ogr?
     raise NoDatabase.new, "No db connection: #{@conn_hash.inspect}" if !db?
     @output_path = 'tmp' # write all files to the Gem's tmp dir
-    # output_json
-    # write_json_files_to_db_tables
+    QUERYABLE.any? { |l| @type == l } ? write_to_db : do_sub_layers(__method__)
   end
 
   private
@@ -118,23 +117,26 @@ class Layer
     FeatureScraper.new(url).json_data
   end
 
-  def write_json_files
+  def write_json
     File.write "#{@output_path}/#{@name}.json", json_data("#{@ms_url}/#{@id}")
   end
 
-  # def write_json_files_to_db_tables
-  #   files.each do |f|
-  #     `#{OGR2OGR}"#{conn}" "#{f}" -nln #{base(f)} #{srs} -nlt #{geom(f)}`
-  #   end
-  # end
-
-  def geom(file)
-    esri = esri_geom(file)
-    GEOM_TYPES[esri.to_sym] || raise("Unknown geometry type: '#{esri}'")
+  def write_to_db
+    write_json
+    `#{OGR2OGR}"#{conn}" "#{file_path}" -nln #{table} #{srs} -nlt #{geom}`
   end
 
-  def esri_geom(file)
-    JSON.parse(File.read(file))['geometryType']
+  def file_path
+    @output_path << '/' << @name << '.json'
+  end
+
+  def geom
+    esri = esri_geom
+    GEOM_TYPES[esri] || raise("Unknown geometry: '#{esri}' for layer #{@name}")
+  end
+
+  def esri_geom
+    @page_json['geometryType']
   end
 
   def srs
@@ -142,23 +144,19 @@ class Layer
     "-a_srs #{GisScraper.config[:srs]}" || ''
   end
 
-  def base(full_file_name)
-    full_file_name.split('/').last[0..-6].downcase
+  def table
+    Shellwords.escape @name.downcase
   end
-
-  # def files
-  #   Dir.glob('tmp/**/*.json')
-  # end
 
   def conn
     host, port, db, user, pwd = *@conn_hash.values
     "host=#{host} port=#{port} dbname=#{db} user=#{user} password=#{pwd}"
   end
 
-  def process_sub_layers # recurses
-    FileUtils.mkdir File.join(@output_path, @name)
+  def do_sub_layers(method) # recurses
+    FileUtils.mkdir File.join(@output_path, @name) if method == :output_json
     path = @output_path << "/#{@name}"
-    @sub_layer_ids.each { |n| Layer.new("#{@ms_url}/#{n}", path).output_json }
+    @sub_layer_ids.each { |n| Layer.new("#{@ms_url}/#{n}", path).send(method) }
   end
 
   def replace_forwardslashes_with_underscores(string)
