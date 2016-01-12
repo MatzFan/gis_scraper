@@ -1,5 +1,4 @@
 require 'fileutils'
-require 'shellwords'
 
 class Layer
 
@@ -51,17 +50,26 @@ class Layer
   end
 
   def output_json
-    QUERYABLE.any? { |l| @type == l } ? write_json : do_sub_layers(__method__)
+    output(:json)
   end
 
   def output_to_db
     raise OgrMissing.new, 'ogr2ogr missing, is GDAL installed?' if !ogr2ogr?
     raise NoDatabase.new, "No db connection: #{@conn_hash.inspect}" if !db?
-    @output_path = 'tmp' # write all files to the Gem's tmp dir
-    QUERYABLE.any? { |l| @type == l } ? write_to_db : do_sub_layers(__method__)
+    output(:db)
   end
 
   private
+
+  def output(format) # recurses sub-layers :)
+    QUERYABLE.any? { |l| @type == l } ? method(format) : do_sub_layers(format)
+  end
+
+  def method(format)
+    return write_json if format == :json
+    return write_to_db if format == :db
+    raise "Unknown output format: #{format}"
+  end
 
   def output_path(path)
     File.expand_path(path) if path
@@ -122,12 +130,9 @@ class Layer
   end
 
   def write_to_db
+    @output_path = 'tmp'
     write_json
-    `#{OGR2OGR}"#{conn}" "#{file_path}" -nln #{table} #{srs} -nlt #{geom}`
-  end
-
-  def file_path
-    @output_path << '/' << @name << '.json'
+    `#{OGR2OGR}"#{conn}" "tmp/#{@name}.json" -nln #{table} #{srs} -nlt #{geom}`
   end
 
   def geom
@@ -153,10 +158,14 @@ class Layer
     "host=#{host} port=#{port} dbname=#{db} user=#{user} password=#{pwd}"
   end
 
-  def do_sub_layers(method) # recurses
-    FileUtils.mkdir File.join(@output_path, @name) if method == :output_json
+  def do_sub_layers(format)
+    FileUtils.mkdir File.join(@output_path, @name) if format == :json
     path = @output_path << "/#{@name}"
-    @sub_layer_ids.each { |n| Layer.new("#{@ms_url}/#{n}", path).send(method) }
+    @sub_layer_ids.each { |n| sub_layer(n, path).send(:output, format) }
+  end
+
+  def sub_layer(id, path)
+    Layer.new("#{@ms_url}/#{id}", path)
   end
 
   def replace_forwardslashes_with_underscores(string)

@@ -1,3 +1,5 @@
+require 'shellwords'
+
 describe Layer do
 
   before do
