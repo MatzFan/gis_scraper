@@ -130,7 +130,7 @@ class Layer
   end
 
   def write_to_db
-    @output_path = 'tmp'
+    @output_path = File.expand_path 'tmp'
     write_json
     `#{OGR2OGR}"#{conn}" "tmp/#{@name}.json" -nln #{table} #{srs} -nlt #{geom}`
   end
