@@ -22,9 +22,7 @@ describe Layer do
   let(:feature_layer_unsafe_characters) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/14' }
   let(:layer_with_sub_group_layers) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/129' }
   let(:annotation_layer) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/8' }
-  sub_layers = [{'id' => 130, 'name' => 'High Pressure'},
-                {'id' => 133, 'name' => 'Medium Pressure'},
-                {'id' => 136, 'name' =>'Low Pressure'}]
+  let(:sub_layer_ids) { [130, 133, 136] }
   dir_names = ['tmp/Jersey Gas/High Pressure', 'tmp/Jersey Gas/Low Pressure', 'tmp/Jersey Gas/Medium Pressure']
 
   let(:scraper_double) { instance_double 'FeatureScraper' }
@@ -59,13 +57,13 @@ describe Layer do
     end
   end
 
-  context '#sub_layer_id_names' do
+  context '#sub_layer_ids' do
     it 'returns an empty list for a feature layer (which have no sub layers)' do
-      expect(feature_layer.send :sub_layer_id_names).to eq []
+      expect(feature_layer.send :sub_layer_ids).to eq []
     end
 
-    it 'returns a list of the sublayer hashes for :id, :name for a group layer, if any' do
-      expect(layer_with_sub_group_layers.send :sub_layer_id_names).to eq sub_layers
+    it 'returns a list of the sublayer ids for a group layer, if any' do
+      expect(layer_with_sub_group_layers.send :sub_layer_ids).to eq sub_layer_ids
     end
   end
 
@@ -147,7 +145,7 @@ describe Layer do
     end
   end
 
-  xcontext '#output_to_db' do
+  context '#output_to_db' do
     it 'raises error OgrMissing if ogr2ogr executable is not found' do
       allow_any_instance_of(Layer).to receive(:ogr2ogr?) { nil }
       expect(->{feature_layer.output_to_db}).to raise_error Layer::OgrMissing
@@ -158,33 +156,33 @@ describe Layer do
       expect(->{feature_layer.output_to_db}).to raise_error Layer::NoDatabase
     end
 
-    it 'writes a single JSON layer file to a PostgresSQL database table with the same name (lowercased)' do
-      begin
-        `cp spec/fixtures/test.json tmp`
-        feature_layer.send(:write_json_files_to_db_tables)
-        res = conn.exec("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
-        expect(res[0]['table_name']).to eq 'test'
-      ensure
-        conn.exec 'drop schema public cascade;'
-        conn.exec 'create schema public;'
-        clean_tmp_dir
-      end
-    end
+    # it 'writes a single JSON layer file to a PostgresSQL database table with the same name (lowercased)' do
+    #   begin
+    #     `cp spec/fixtures/test.json tmp`
+    #     feature_layer.send(:write_json_files_to_db_tables)
+    #     res = conn.exec("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+    #     expect(res[0]['table_name']).to eq 'test'
+    #   ensure
+    #     conn.exec 'drop schema public cascade;'
+    #     conn.exec 'create schema public;'
+    #     clean_tmp_dir
+    #   end
+    # end
 
-    it 'writes a single JSON layer file to a PostgresSQL database table with the same name (lowercased)' do
-      begin
-        `mkdir tmp/dir`
-        `cp spec/fixtures/test.json tmp/dir`
-        `cp spec/fixtures/test.json tmp/test1.json`
-        feature_layer.send(:write_json_files_to_db_tables)
-        res = conn.exec("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
-        expect(res.map { |tup| tup['table_name'] }.sort).to eq ['test', 'test1']
-      ensure
-        conn.exec 'drop schema public cascade;'
-        conn.exec 'create schema public;'
-        clean_tmp_dir
-      end
-    end
+    # it 'writes a single JSON layer file to a PostgresSQL database table with the same name (lowercased)' do
+    #   begin
+    #     `mkdir tmp/dir`
+    #     `cp spec/fixtures/test.json tmp/dir`
+    #     `cp spec/fixtures/test.json tmp/test1.json`
+    #     feature_layer.send(:write_json_files_to_db_tables)
+    #     res = conn.exec("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+    #     expect(res.map { |tup| tup['table_name'] }.sort).to eq ['test', 'test1']
+    #   ensure
+    #     conn.exec 'drop schema public cascade;'
+    #     conn.exec 'create schema public;'
+    #     clean_tmp_dir
+    #   end
+    # end
   end
 
   context '#esri_geom' do

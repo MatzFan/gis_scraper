@@ -47,20 +47,20 @@ class Layer
     @page_json = page_json
     @type = type
     @name = name
-    @sub_layer_id_names = sub_layer_id_names
+    @sub_layer_ids = sub_layer_ids
   end
 
   def output_json
     QUERYABLE.any? { |l| @type == l } ? write_json_files : process_sub_layers
   end
 
-  # def output_to_db
-  #   raise OgrMissing.new, 'ogr2ogr missing, is GDAL installed?' if !ogr2ogr?
-  #   raise NoDatabase.new, "No db connection: #{@conn_hash.inspect}" if !db?
-  #   @output_path = 'tmp' # write all files to the Gem's tmp dir
-  #   output_json
-  #   write_json_files_to_db_tables
-  # end
+  def output_to_db
+    raise OgrMissing.new, 'ogr2ogr missing, is GDAL installed?' if !ogr2ogr?
+    raise NoDatabase.new, "No db connection: #{@conn_hash.inspect}" if !db?
+    @output_path = 'tmp' # write all files to the Gem's tmp dir
+    # output_json
+    # write_json_files_to_db_tables
+  end
 
   private
 
@@ -110,8 +110,8 @@ class Layer
     type
   end
 
-  def sub_layer_id_names
-    @page_json['subLayers'] || []
+  def sub_layer_ids
+    @page_json['subLayers'].map { |hash| hash['id'] } || []
   end
 
   def json_data(url)
@@ -155,13 +155,10 @@ class Layer
     "host=#{host} port=#{port} dbname=#{db} user=#{user} password=#{pwd}"
   end
 
-  def process_sub_layers
+  def process_sub_layers # recurses
     FileUtils.mkdir File.join(@output_path, @name)
-    new_output_path = @output_path << "/#{@name}"
-    @sub_layer_id_names.each do |hash|
-      name, id = hash['name'], hash['id']
-      Layer.new("#{@ms_url}/#{id}", new_output_path).output_json # recurse
-    end
+    path = @output_path << "/#{@name}"
+    @sub_layer_ids.each { |n| Layer.new("#{@ms_url}/#{n}", path).output_json }
   end
 
   def replace_forwardslashes_with_underscores(string)
