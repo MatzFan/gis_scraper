@@ -26,7 +26,7 @@ describe Layer do
   let(:annotation_layer) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/8' }
   let(:sub_layer_ids) { [130, 133, 136] }
   let(:dir_names) { ['tmp/Jersey Gas/High Pressure', 'tmp/Jersey Gas/Low Pressure', 'tmp/Jersey Gas/Medium Pressure'] }
-  let(:tables) { ["gas high pressure main", "gas low pressure main", "gas medium pressure main", "high_pressure_asset", "low_pressure_asset", "medium_pressure_asset"] }
+  let(:tables) { ["gas_high_pressure_main", "gas_low_pressure_main", "gas_medium_pressure_main", "high_pressure_asset", "low_pressure_asset", "medium_pressure_asset"] }
 
   let(:scraper_double) { instance_double 'FeatureScraper' }
 
@@ -163,7 +163,7 @@ describe Layer do
       begin
         feature_layer.output_to_db
         res = conn.exec("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
-        expect(res[0]['table_name']).to eq 'aircraft noise zone 1'
+        expect(res[0]['table_name']).to eq 'aircraft_noise_zone_1'
       ensure
         conn.exec 'drop schema public cascade;'
         conn.exec 'create schema public;'

@@ -150,7 +150,7 @@ class Layer
   end
 
   def table
-    Shellwords.escape @name.downcase
+    Shellwords.escape @name.downcase.gsub(' ', '_')
   end
 
   def conn
