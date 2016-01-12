@@ -1,4 +1,5 @@
 require 'fileutils'
+require 'shellwords'
 
 class Layer
 
@@ -15,7 +16,7 @@ class Layer
   class NoDatabase < StandardError; end
   class OgrMissing < StandardError; end
 
-  attr_reader :type, :id, :name
+  attr_reader :type
 
   TYPES = ['Group Layer',
            'Feature Layer',
@@ -34,10 +35,10 @@ class Layer
 
   OGR2OGR = 'ogr2ogr -f "PostgreSQL" PG:'
 
-  def initialize(url, output_path = nil)
+  def initialize(url, path = nil)
     @conn_hash = CONN.zip(CONN.map { |key| GisScraper.config[key] }).to_h
     @url = url
-    @output_path = output_path || config_path
+    @output_path = output_path(path) || config_path
     @ms_url = ms_url # map server url ending '../MapServer'
     @id = id
     @agent = Mechanize.new
@@ -46,21 +47,26 @@ class Layer
     @page_json = page_json
     @type = type
     @name = name
+    @sub_layer_id_names = sub_layer_id_names
   end
 
   def output_json
     QUERYABLE.any? { |l| @type == l } ? write_json_files : process_sub_layers
   end
 
-  def output_to_db
-    raise OgrMissing.new, 'ogr2ogr missing, is GDAL installed?' if !ogr2ogr?
-    raise NoDatabase.new, "No db connection: #{@conn_hash.inspect}" if !db?
-    @output_path = 'tmp' # write all files to the Gem's tmp dir
-    output_json
-    write_json_files_to_db_tables
-  end
+  # def output_to_db
+  #   raise OgrMissing.new, 'ogr2ogr missing, is GDAL installed?' if !ogr2ogr?
+  #   raise NoDatabase.new, "No db connection: #{@conn_hash.inspect}" if !db?
+  #   @output_path = 'tmp' # write all files to the Gem's tmp dir
+  #   output_json
+  #   write_json_files_to_db_tables
+  # end
 
   private
+
+  def output_path(path)
+    File.expand_path(path) if path
+  end
 
   def db?
     PG.connect(@conn_hash) rescue nil
@@ -116,11 +122,11 @@ class Layer
     File.write "#{@output_path}/#{@name}.json", json_data("#{@ms_url}/#{@id}")
   end
 
-  def write_json_files_to_db_tables
-    files.each do |f|
-      `#{OGR2OGR}"#{conn}" "#{f}" -nln #{base(f)} #{srs} -nlt #{geom(f)}`
-    end
-  end
+  # def write_json_files_to_db_tables
+  #   files.each do |f|
+  #     `#{OGR2OGR}"#{conn}" "#{f}" -nln #{base(f)} #{srs} -nlt #{geom(f)}`
+  #   end
+  # end
 
   def geom(file)
     esri = esri_geom(file)
@@ -140,9 +146,9 @@ class Layer
     full_file_name.split('/').last[0..-6].downcase
   end
 
-  def files
-    Dir.glob('tmp/**/*.json')
-  end
+  # def files
+  #   Dir.glob('tmp/**/*.json')
+  # end
 
   def conn
     host, port, db, user, pwd = *@conn_hash.values
@@ -150,20 +156,12 @@ class Layer
   end
 
   def process_sub_layers
-    sub_layer_id_names.each do |hash|
+    FileUtils.mkdir File.join(@output_path, @name)
+    new_output_path = @output_path << "/#{@name}"
+    @sub_layer_id_names.each do |hash|
       name, id = hash['name'], hash['id']
-      path = "#{@output_path}/#{name}"
-      recurse_json sub_layer(id, path), path
+      Layer.new("#{@ms_url}/#{id}", new_output_path).output_json # recurse
     end
-  end
-
-  def recurse_json(layer, dir)
-    FileUtils.mkdir dir
-    layer.output_json
-  end
-
-  def sub_layer(id, path)
-    Layer.new "#{@ms_url}/#{id}", path
   end
 
   def replace_forwardslashes_with_underscores(string)

@@ -13,17 +13,19 @@ describe Layer do
      `rm -rf tmp/*`
   end
 
-  let(:feature_layer) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0' }
+  let(:feature_layer) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/11' }
+  let(:file_name) { 'Aircraft Noise Zone 1.json' }
   let(:group_layer) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/146' }
   let(:no_layer_id_url) { Layer.new 'no/layer/number/specified/MapServer' }
   let(:not_map_server_url) { Layer.new '"MapServer"/missing/42' }
-  let(:feature_layer_with_path) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/11' }
+  let(:feature_layer_with_path) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/11', '~/Desktop' }
   let(:feature_layer_unsafe_characters) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/14' }
   let(:layer_with_sub_group_layers) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/129' }
   let(:annotation_layer) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/8' }
   sub_layers = [{'id' => 130, 'name' => 'High Pressure'},
                 {'id' => 133, 'name' => 'Medium Pressure'},
                 {'id' => 136, 'name' =>'Low Pressure'}]
+  dir_names = ['tmp/Jersey Gas/High Pressure', 'tmp/Jersey Gas/Low Pressure', 'tmp/Jersey Gas/Medium Pressure']
 
   let(:scraper_double) { instance_double 'FeatureScraper' }
 
@@ -68,14 +70,23 @@ describe Layer do
   end
 
   context '#write_json_files' do
-    it "writes a feature layer's data to a JSON file in the path specified or '.'" do
-      file_name = 'Aircraft Noise Zone 1.json'
+    it "writes a feature layer's data to a JSON file to configured path if no path is specified" do
+      layer = feature_layer
+      begin
+        layer.send :write_json_files
+        expect(Dir['tmp/*']).to include "tmp/#{file_name}"
+      ensure
+        clean_tmp_dir
+      end
+    end
+
+    it "writes a feature layer's data to a JSON file to the path specified" do
       layer = feature_layer_with_path
       begin
         layer.send :write_json_files
-        expect(`ls tmp`).to include file_name
+        expect(Dir['/Users/me/Desktop/*']).to include "/Users/me/Desktop/#{file_name}"
       ensure
-        clean_tmp_dir
+        `rm ~/Desktop/#{Shellwords.escape(file_name)}`
       end
     end
 
@@ -84,16 +95,10 @@ describe Layer do
       layer = feature_layer_unsafe_characters
       begin
         layer.send :write_json_files
-        expect(`ls tmp`).to include file_name
+        expect(Dir['tmp/*']).to include "tmp/#{file_name}"
       ensure
         clean_tmp_dir
       end
-    end
-  end
-
-  context '#sub_layer(id, path)' do
-    it 'returns the a Layer object for the given the sub layer id' do
-      expect(layer_with_sub_group_layers.send(:sub_layer, 130, 'tmp').class). to eq Layer
     end
   end
 
@@ -103,7 +108,7 @@ describe Layer do
       allow_any_instance_of(Layer).to receive(:json_data) { nil }
       begin
         layer.output_json
-        expect(`ls tmp`).to include 'Annotation6.json'
+        expect(Dir['tmp/*']).to include 'tmp/Annotation6.json'
       ensure
         clean_tmp_dir
       end
@@ -114,37 +119,35 @@ describe Layer do
       allow_any_instance_of(Layer).to receive(:json_data) { nil }
       begin
         layer.output_json
-        expect(`ls tmp`).to include 'Gazetteer.json'
+        expect(Dir['tmp/*']).to include "tmp/#{file_name}"
       ensure
         clean_tmp_dir
       end
     end
 
     it 'for a group layer creates sub directories mirroring sub-group structure' do
-      dir_names = ['High Pressure', 'Medium Pressure', 'Low Pressure']
       allow_any_instance_of(Layer).to receive :write_json_files # stub recursive instances, so nothing is scraped!!
       begin
         layer_with_sub_group_layers.output_json
-        dir_names.all? { |dir| expect(`ls tmp`).to include dir }
+        expect(Dir['tmp/*/*'].sort).to eq dir_names
       ensure
         clean_tmp_dir
       end
     end
 
     it 'for a group layer calls #write_json_files for each underlying feature layer' do
-      dir_names = ['High Pressure', 'Medium Pressure', 'Low Pressure']
       shell_safe_dir_names = dir_names.map { |str| str.gsub(' ', '\ ') }
       allow_any_instance_of(Layer).to receive(:json_data) { {} } # stub recursive instances, so nothing is scraped!!
       begin
         layer_with_sub_group_layers.output_json
-        shell_safe_dir_names.all? { |dir| expect(`ls tmp/#{dir} | wc -l`.chomp.to_i).to eq 2 } # 2 json files should be written to each dir
+        shell_safe_dir_names.all? { |dir| expect(Dir['tmp/**/*.json'].size).to eq 6 } # 6 json files should be written in total
       ensure
         clean_tmp_dir
       end
     end
   end
 
-  context '#output_to_db' do
+  xcontext '#output_to_db' do
     it 'raises error OgrMissing if ogr2ogr executable is not found' do
       allow_any_instance_of(Layer).to receive(:ogr2ogr?) { nil }
       expect(->{feature_layer.output_to_db}).to raise_error Layer::OgrMissing
