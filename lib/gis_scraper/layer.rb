@@ -3,15 +3,6 @@ require 'tmpdir'
 
 class Layer
 
-  class JSONParser < Mechanize::File
-    attr_reader :json
-
-    def initialize(uri=nil, response=nil, body=nil, code=nil)
-      super(uri, response, body, code)
-      @json = JSON.parse(body)
-    end
-  end
-
   class UnknownLayerType < StandardError; end
   class NoDatabase < StandardError; end
   class OgrMissing < StandardError; end
@@ -37,7 +28,7 @@ class Layer
     @output_path = output_path(path) || config_path
     @id, @mapserver_url = id, mapserver_url # mapserver url ends '../MapServer'
     @agent = Mechanize.new
-    @agent.pluggable_parser['text/plain'] = JSONParser
+    @agent.pluggable_parser['text/plain'] = GisScraper::JSONParser
     validate_url
     @page_json = page_json
     @type, @name, @sub_layer_ids = type, name, sub_layer_ids

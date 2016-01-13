@@ -1,12 +1,3 @@
-class JSONParser < Mechanize::File
-  attr_reader :json
-
-  def initialize(uri=nil, response=nil, body=nil, code=nil)
-    super(uri, response, body, code)
-    @json = JSON.parse(body)
-  end
-end
-
 class FeatureScraper
 
   attr_reader :name
@@ -14,7 +5,7 @@ class FeatureScraper
   def initialize(url)
     @url = url
     @agent = Mechanize.new
-    @agent.pluggable_parser['text/plain'] = JSONParser
+    @agent.pluggable_parser['text/plain'] = GisScraper::JSONParser
     @layer = layer # hash of json
     @name, @pk, @max = name, pk, max # maxRecordCount - usually 1000
     @form = form

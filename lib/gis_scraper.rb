@@ -37,4 +37,13 @@ module GisScraper
     @config
   end
 
+  class JSONParser < Mechanize::File # shared by FeatureScraper & Layer
+    attr_reader :json
+
+    def initialize(uri=nil, response=nil, body=nil, code=nil)
+      super(uri, response, body, code)
+      @json = JSON.parse(body)
+    end
+  end
+
 end
