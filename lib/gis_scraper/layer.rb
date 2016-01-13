@@ -20,7 +20,7 @@ class Layer
                 'esriGeometryPolygon' => 'MULTIPOLYGON'}
 
   MSURL = 'MapServer'
-  OGR2OGR = 'ogr2ogr -f "PostgreSQL" PG:'
+  OGR2OGR = 'ogr2ogr -overwrite -f "PostgreSQL" PG:'
 
   def initialize(url, path = nil)
     @conn_hash = CONN.zip(CONN.map { |key| GisScraper.config[key] }).to_h
