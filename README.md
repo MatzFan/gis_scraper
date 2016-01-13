@@ -1,10 +1,10 @@
 # gis_scraper Ruby Gem
-[![Gem Version](https://badge.fury.io/rb/gis_scraper.svg)](http://badge.fury.io/rb/gis_scraper)
 [![Build status](https://secure.travis-ci.org/MatzFan/gis_scraper.svg)](http://travis-ci.org/MatzFan/gis_scraper)
+[![Gem Version](https://badge.fury.io/rb/gis_scraper.svg)](http://badge.fury.io/rb/gis_scraper)
 
 Utility to recursively scrape ArcGIS MapServer data using the ArcGIS REST API.
 
-ArcGIS MapServer REST queries are limited to 1,000 objects in some cases. This tool makes repeated calls until all data for a given layer (and all sub-layers) is extracted. Output can be JSON file format or data may be written directly to Postgres database tables in PostGIS format. GIS clients - e.g. QGIS - can be configured to use vector layer data from PostGIS sources.
+ArcGIS MapServer REST queries are limited to 1,000 objects in some cases. This tool makes repeated calls until all data for a given layer (and all sub-layers) is extracted. Output can be GeoJSON file format or data may be written directly to Postgres database tables in PostGIS format. GIS clients - e.g. QGIS - can be configured to use vector layer data from PostGIS sources.
 
 ## Requirements
 
@@ -14,9 +14,9 @@ A Postgres database with the PostGIS extension enabled for database export.
 
 For data import to a database [GDAL](http://gdal.org) must be installed and specifically the [ogr2ogr](http://www.gdal.org/ogr2ogr.html) executable must be available in your path.
 
-## Known Limitations
+## Limitations
 
-*NIX systems only - Linux/Mac OS X/Linux. ArcGIS MapServer data is readable directly by ArcGIS Windows clients.
+*NIX systems only - Linux/Mac OS X. ArcGIS MapServer data is readable directly by ArcGIS Windows clients.
 
 The following esri geometry types are supported:
 
@@ -97,7 +97,7 @@ If the layer is type 'Feature Layer', a single file of JSON data will be saved (
 
 **Output to a database**
 
-Valid database config options must be set. The following command will convert JSON files, create tables for each layer (& sub-layers, if any) and import the data.
+Valid database config options must be set. The following command will convert JSON files, create tables for each layer (& sub-layers, if any) and import the data. Table names are lowercased, prefixed '_' and have spaces replaced with undescores.
 
 ```
 layer.output_to_db
