@@ -15,10 +15,8 @@ class FeatureScraper
     @url = url
     @agent = Mechanize.new
     @agent.pluggable_parser['text/plain'] = JSONParser
-    @layer = layer # hash
-    @name = name
-    @pk = pk
-    @max = max # maxRecordCount - usually 1000
+    @layer = layer # hash of json
+    @name, @pk, @max = name, pk, max # maxRecordCount - usually 1000
     @form = form
     @loops = loops
     @threads = GisScraper.config[:threads]
@@ -57,7 +55,7 @@ class FeatureScraper
 
   def set_query_params(loop_num = nil)
     @form.fields[0].value = where_text(loop_num)
-    loop_num ? @form.radiobuttons[4].uncheck : @form.radiobuttons[4].check # count only true
+    loop_num ? @form.radiobuttons[4].uncheck : @form.radiobuttons[4].check
     @form.fields[6].value = '*'
     @form.field_with(name: 'f').options[1].select # for JSON
   end

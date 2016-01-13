@@ -3,17 +3,16 @@ require 'shellwords'
 describe Layer do
 
   before do
-    GisScraper.configure(output_path: 'tmp', user: 'me', srs: 'EPSG:3109')
-    `mkdir -p tmp` # for Travis
+    GisScraper.configure(output_path: Dir.tmpdir, user: 'me', srs: 'EPSG:3109')
   end
 
   def conn
     PG.connect(dbname: ENV['DB'] || GisScraper.config[:dbname], user: ENV['POSTGRES_USER'] || GisScraper.config[:user])
   end
 
-  def clean_tmp_dir
-     `rm -rf tmp/*`
-  end
+  let(:tmp) { Dir.tmpdir }
+
+  def clean_tmp_dir; `rm -rf #{tmp}/*`; end
 
   let(:feature_layer) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/11' }
   let(:file_name) { 'Aircraft Noise Zone 1.json' }
@@ -25,7 +24,7 @@ describe Layer do
   let(:layer_with_sub_group_layers) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/129' }
   let(:annotation_layer) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/8' }
   let(:sub_layer_ids) { [130, 133, 136] }
-  let(:dir_names) { ['tmp/Jersey Gas/High Pressure', 'tmp/Jersey Gas/Low Pressure', 'tmp/Jersey Gas/Medium Pressure'] }
+  let(:dir_names) { ["#{tmp}/Jersey Gas/High Pressure", "#{tmp}/Jersey Gas/Low Pressure", "#{tmp}/Jersey Gas/Medium Pressure"] }
   let(:tables) { ["gas_high_pressure_main", "gas_low_pressure_main", "gas_medium_pressure_main", "high_pressure_asset", "low_pressure_asset", "medium_pressure_asset"] }
 
   let(:scraper_double) { instance_double 'FeatureScraper' }
@@ -75,7 +74,7 @@ describe Layer do
       layer = feature_layer
       begin
         layer.send :write_json
-        expect(Dir['tmp/*']).to include "tmp/#{file_name}"
+        expect(Dir["#{Dir.tmpdir}/*"]).to include "#{tmp}/#{file_name}"
       ensure
         clean_tmp_dir
       end
@@ -96,7 +95,7 @@ describe Layer do
       layer = feature_layer_unsafe_characters
       begin
         layer.send :write_json
-        expect(Dir['tmp/*']).to include "tmp/#{file_name}"
+        expect(Dir["#{Dir.tmpdir}/*"]).to include "#{tmp}/#{file_name}"
       ensure
         clean_tmp_dir
       end
@@ -104,14 +103,14 @@ describe Layer do
   end
 
   context '#output_json', :public do
-    it 'calls #write_json_files for an annotation layer' do
+    it 'does not call #write_json_files for an annotation layer' do
       layer = annotation_layer
       allow_any_instance_of(Layer).to receive(:json_data) { nil }
       begin
         layer.output_json
-        expect(Dir['tmp/*']).to include 'tmp/Annotation6.json'
+        expect(Dir["#{Dir.tmpdir}/*"]).not_to include "#{tmp}/Annotation6.json"
       ensure
-        clean_tmp_dir
+        clean_tmp_dir # in case it fails
       end
     end
 
@@ -120,7 +119,7 @@ describe Layer do
       allow_any_instance_of(Layer).to receive(:json_data) { nil }
       begin
         layer.output_json
-        expect(Dir['tmp/*']).to include "tmp/#{file_name}"
+        expect(Dir["#{Dir.tmpdir}/*"]).to include "#{tmp}/#{file_name}"
       ensure
         clean_tmp_dir
       end
@@ -130,7 +129,7 @@ describe Layer do
       allow_any_instance_of(Layer).to receive :write_json_files # stub recursive instances, so nothing is scraped!!
       begin
         layer_with_sub_group_layers.output_json
-        expect(Dir['tmp/*/*'].sort).to eq dir_names
+        expect(Dir["#{Dir.tmpdir}/*/*"].sort).to eq dir_names
       ensure
         clean_tmp_dir
       end
@@ -141,7 +140,7 @@ describe Layer do
       allow_any_instance_of(Layer).to receive(:json_data) { {} } # stub recursive instances, so nothing is scraped!!
       begin
         layer_with_sub_group_layers.output_json
-        shell_safe_dir_names.all? { |dir| expect(Dir['tmp/**/*.json'].size).to eq 6 } # 6 json files should be written in total
+        shell_safe_dir_names.all? { |dir| expect(Dir["#{Dir.tmpdir}/**/*.json"].size).to eq 6 } # 6 json files should be written in total
       ensure
         clean_tmp_dir
       end

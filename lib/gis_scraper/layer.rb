@@ -1,4 +1,5 @@
 require 'fileutils'
+require 'tmpdir'
 
 class Layer
 
@@ -17,11 +18,7 @@ class Layer
 
   attr_reader :type
 
-  TYPES = ['Group Layer',
-           'Feature Layer',
-           'Annotation Layer',
-           'Annotation SubLayer']
-  QUERYABLE = ['Feature Layer', 'Annotation Layer']
+  TYPE = %w(Group\ Layer Feature\ Layer Annotation\ Layer Annotation\ SubLayer)
 
   CONN = [:host, :port, :dbname, :user, :password] # PG connection options
 
@@ -31,22 +28,19 @@ class Layer
                 'esriGeometryPolyline' => 'MULTILINESTRING',
                 'esriGeometryPolygon' => 'MULTIPOLYGON'}
 
-
+  MSURL = 'MapServer'
   OGR2OGR = 'ogr2ogr -f "PostgreSQL" PG:'
 
   def initialize(url, path = nil)
     @conn_hash = CONN.zip(CONN.map { |key| GisScraper.config[key] }).to_h
     @url = url
     @output_path = output_path(path) || config_path
-    @ms_url = ms_url # map server url ending '../MapServer'
-    @id = id
+    @id, @mapserver_url = id, mapserver_url # mapserver url ends '../MapServer'
     @agent = Mechanize.new
     @agent.pluggable_parser['text/plain'] = JSONParser
     validate_url
     @page_json = page_json
-    @type = type
-    @name = name
-    @sub_layer_ids = sub_layer_ids
+    @type, @name, @sub_layer_ids = type, name, sub_layer_ids
   end
 
   def output_json
@@ -61,8 +55,8 @@ class Layer
 
   private
 
-  def output(format) # recurses sub-layers :)
-    QUERYABLE.any? { |l| @type == l } ? method(format) : do_sub_layers(format)
+  def output(format) # recurses sub-layers, if any (none for Annotation layers)
+    @type == 'Feature Layer' ? method(format) : do_sub_layers(format)
   end
 
   def method(format)
@@ -87,7 +81,7 @@ class Layer
     File.expand_path GisScraper.config[:output_path]
   end
 
-  def ms_url
+  def mapserver_url
     @url.split('/')[0..-2].join('/')
   end
 
@@ -97,7 +91,7 @@ class Layer
 
   def validate_url
     raise ArgumentError, 'URL must end with layer id' if  @id.to_i.to_s != @id
-    raise ArgumentError, 'Bad MapServer URL' if @ms_url[-9..-1] != 'MapServer'
+    raise ArgumentError, 'Bad MapServer URL' if @mapserver_url[-9..-1] != MSURL
   end
 
   def page_json
@@ -113,7 +107,7 @@ class Layer
   end
 
   def validate_type(type)
-    raise UnknownLayerType, type unless (TYPES.any? { |t| t == type })
+    raise UnknownLayerType, type unless (TYPE.any? { |t| t == type })
     type
   end
 
@@ -121,18 +115,26 @@ class Layer
     @page_json['subLayers'].map { |hash| hash['id'] } || []
   end
 
-  def json_data(url)
-    FeatureScraper.new(url).json_data
+  def json_data
+    FeatureScraper.new("#{@mapserver_url}/#{@id}").json_data
   end
 
   def write_json
-    File.write "#{@output_path}/#{@name}.json", json_data("#{@ms_url}/#{@id}")
+    IO.write json_path, json_data
+  end
+
+  def json_path
+    "#{@output_path}/#{@name}.json"
   end
 
   def write_to_db
-    @output_path = File.expand_path 'tmp'
-    write_json
-    `#{OGR2OGR}"#{conn}" "tmp/#{@name}.json" -nln #{table} #{srs} -nlt #{geom}`
+    @output_path = Dir.mktmpdir('gis_scraper') # prefix for identification
+    begin
+      write_json
+      `#{OGR2OGR}"#{conn}" "#{json_path}" -nln #{table} #{srs} -nlt #{geom}`
+    ensure
+      FileUtils.remove_entry @output_path
+    end
   end
 
   def geom
@@ -165,7 +167,7 @@ class Layer
   end
 
   def sub_layer(id, path)
-    Layer.new("#{@ms_url}/#{id}", path)
+    Layer.new("#{@mapserver_url}/#{id}", path)
   end
 
   def replace_forwardslashes_with_underscores(string)
