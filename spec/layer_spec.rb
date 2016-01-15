@@ -2,12 +2,14 @@ require 'shellwords'
 
 describe Layer do
 
+  DIGIMAP = 'http://gps.digimap.gg/arcgis/rest/services'
+
   before do
     GisScraper.configure(output_path: Dir.tmpdir, user: 'me', srs: 'EPSG:3109')
   end
 
   def conn
-    PG.connect(dbname: ENV['DB'] || GisScraper.config[:dbname], user: ENV['POSTGRES_USER'] || GisScraper.config[:user])
+    PG.connect(host: 'localhost', dbname: ENV['DB'] || GisScraper.config[:dbname], user: ENV['POSTGRES_USER'] || GisScraper.config[:user])
   end
 
   let(:tmp) { Dir.tmpdir }
@@ -22,7 +24,9 @@ describe Layer do
   let(:feature_layer_with_path) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/11', '~/Desktop' }
   let(:feature_layer_unsafe_characters) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/14' }
   let(:layer_with_sub_group_layers) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/129' }
+  let(:group_layer_with_duplicate_layer_names) { Layer.new "#{DIGIMAP}/JerseyUtilities/JerseyUtilities/MapServer/117" }
   let(:annotation_layer) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/8' }
+  let(:layer_with_no_geometry) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/6' }
   let(:sub_layer_ids) { [130, 133, 136] }
   let(:dir_names) { ["#{tmp}/Jersey Gas/High Pressure", "#{tmp}/Jersey Gas/Low Pressure", "#{tmp}/Jersey Gas/Medium Pressure"] }
   let(:tables) { ["_gas_high_pressure_main", "_gas_low_pressure_main", "_gas_medium_pressure_main", "_high_pressure_asset", "_low_pressure_asset", "_medium_pressure_asset"] }
@@ -103,12 +107,23 @@ describe Layer do
   end
 
   context '#output_json', :public do
-    it 'does not call #write_json_files for an annotation layer' do
+    it 'does not call #write_json for an annotation layer' do
       layer = annotation_layer
       allow_any_instance_of(Layer).to receive(:json_data) { nil }
       begin
         layer.output_json
-        expect(Dir["#{Dir.tmpdir}/*"]).not_to include "#{tmp}/Annotation6.json"
+        expect(layer).not_to receive(:write_json)
+      ensure
+        clean_tmp_dir # in case it fails
+      end
+    end
+
+    it 'does not call #write_json for a layer with no geometryType' do
+      layer = layer_with_no_geometry
+      allow_any_instance_of(Layer).to receive(:json_data) { nil }
+      begin
+        layer.output_json
+        expect(layer).not_to receive(:write_json)
       ensure
         clean_tmp_dir # in case it fails
       end
@@ -129,7 +144,7 @@ describe Layer do
       allow_any_instance_of(Layer).to receive :write_json_files # stub recursive instances, so nothing is scraped!!
       begin
         layer_with_sub_group_layers.output_json
-        expect(Dir["#{Dir.tmpdir}/*/*"].sort).to eq dir_names
+        expect(Dir["#{Dir.tmpdir}/*/*"].all? { |dir| dir_names.include? dir }).to eq true
       ensure
         clean_tmp_dir
       end
@@ -154,7 +169,7 @@ describe Layer do
     end
 
     it 'raises error NoDatabase if cannot connect to db with config options' do
-      allow_any_instance_of(Layer).to receive(:db?) { nil }
+      allow_any_instance_of(Layer).to receive(:conn) { nil }
       expect(->{feature_layer.output_to_db}).to raise_error Layer::NoDatabase
     end
 
@@ -181,11 +196,24 @@ describe Layer do
         clean_tmp_dir
       end
     end
+
+    it 'adds a suffix "_" to the table name if it is non-unique' do
+      conn.exec("CREATE TABLE _aircraft_noise_zone_1 (d date);")
+      begin
+        feature_layer.output_to_db
+        res = conn.exec("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+        expect(res.map { |tup| tup['table_name'] }.sort).to eq %w(_aircraft_noise_zone_1 _aircraft_noise_zone_1_)
+      ensure
+        conn.exec 'drop schema public cascade;'
+        conn.exec 'create schema public;'
+        clean_tmp_dir
+      end
+    end
   end
 
-  context '#esri_geom' do
+  context '#geo' do
     it 'returns the esri geometry type from a JSON file' do
-      expect(feature_layer.send(:esri_geom)).to eq 'esriGeometryPolygon'
+      expect(feature_layer.send(:geo)).to eq 'esriGeometryPolygon'
     end
   end
 
@@ -195,8 +223,9 @@ describe Layer do
     end
 
     it 'raises error "Unknown geometry type: <esri geometry>" if the layer has an unknown type' do
-      allow_any_instance_of(Layer).to receive(:esri_geom) { 'esriGeometryUnknown' }
-      expect(->{feature_layer.send(:geom)}).to raise_error "Unknown geometry: 'esriGeometryUnknown' for layer Aircraft Noise Zone 1"
+      layer = feature_layer
+      layer.instance_variable_set(:@geo, 'esriGeometryUnknown')
+      expect(->{layer.send(:geom)}).to raise_error "Unknown geometry: 'esriGeometryUnknown' for layer Aircraft Noise Zone 1"
     end
   end
 

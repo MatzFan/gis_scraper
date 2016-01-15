@@ -14,13 +14,17 @@ A Postgres database with the PostGIS extension enabled for database export.
 
 For data import to a database [GDAL](http://gdal.org) must be installed and specifically the [ogr2ogr](http://www.gdal.org/ogr2ogr.html) executable must be available in your path.
 
-## Limitations
+## Known Limitations
 
-*NIX systems only - Linux/Mac OS X. ArcGIS MapServer data is readable directly by ArcGIS Windows clients.
+*NIX systems only - Linux/Mac OS X. ArcGIS MapServer data is readable directly by ArcGIS Windows clients 😉
 
-The following esri geometry types are supported:
+The following esri geometry types are so far supported:
 
 - esriGeometryPoint, esriGeometryMultipoint, esriGeometryLine, esriGeometryPolyline, esriGeometryPolygon
+
+Annotation layers are ignored, as are layers with no esri geometryType.
+
+Currently the JSON data for a whole layer is held in memory before being output. For large layers - e.g. >100,000 objects - this can be multiple GB of memory. Is this causes a problem for you please add a comment to [issue #4](https://github.com/MatzFan/gis_scraper/issues/4).
 
 ## Installation
 
@@ -97,7 +101,7 @@ If the layer is type 'Feature Layer', a single file of JSON data will be saved (
 
 **Output to a database**
 
-Valid database config options must be set. The following command will convert JSON files, create tables for each layer (& sub-layers, if any) and import the data. Table names are lowercased, prefixed '_' and have spaces replaced with undescores.
+Valid database config options must be set. The following command will convert JSON files, create tables for each layer (& sub-layers, if any) and import the data. Table names are lowercased, prefixed '_' and have spaces replaced with undescores. If a table with the same name exists the name is appended with '_'.
 
 ```
 layer.output_to_db

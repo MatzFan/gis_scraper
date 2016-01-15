@@ -9,6 +9,9 @@ class Layer
 
   attr_reader :type
 
+  TABLES = "SELECT table_name FROM information_schema.tables\
+   WHERE table_schema = 'public'"
+
   TYPE = %w(Group\ Layer Feature\ Layer Annotation\ Layer Annotation\ SubLayer)
 
   CONN = [:host, :port, :dbname, :user, :password] # PG connection options
@@ -20,7 +23,7 @@ class Layer
                 'esriGeometryPolygon' => 'MULTIPOLYGON'}
 
   MSURL = 'MapServer'
-  OGR2OGR = 'ogr2ogr -overwrite -f "PostgreSQL" PG:'
+  OGR = 'ogr2ogr -overwrite -f "PostgreSQL" PG:'
 
   def initialize(url, path = nil)
     @conn_hash = CONN.zip(CONN.map { |key| GisScraper.config[key] }).to_h
@@ -31,7 +34,7 @@ class Layer
     @agent.pluggable_parser['text/plain'] = GisScraper::JSONParser
     validate_url
     @page_json = page_json
-    @type, @name, @sub_layer_ids = type, name, sub_layer_ids
+    @type, @name, @sub_layer_ids, @geo = type, name, sub_layer_ids, geo
   end
 
   def output_json
@@ -40,14 +43,14 @@ class Layer
 
   def output_to_db
     raise OgrMissing.new, 'ogr2ogr missing, is GDAL installed?' if !ogr2ogr?
-    raise NoDatabase.new, "No db connection: #{@conn_hash.inspect}" if !db?
+    raise NoDatabase.new, "No db connection: #{@conn_hash.inspect}" if !conn
     output(:db)
   end
 
   private
 
   def output(format) # recurses sub-layers, if any (none for Annotation layers)
-    @type == 'Feature Layer' ? method(format) : do_sub_layers(format)
+    (@type == 'Feature Layer' && @geo) ? method(format) : do_sub_layers(format)
   end
 
   def method(format)
@@ -60,7 +63,7 @@ class Layer
     File.expand_path(path) if path
   end
 
-  def db?
+  def conn
     PG.connect(@conn_hash) rescue nil
   end
 
@@ -122,18 +125,17 @@ class Layer
     @output_path = Dir.mktmpdir('gis_scraper') # prefix for identification
     begin
       write_json
-      `#{OGR2OGR}"#{conn}" "#{json_path}" -nln #{table} #{srs} -nlt #{geom}`
+      `#{OGR}"#{c_str}" "#{json_path}" -nln #{table} #{srs} -nlt #{geom}`
     ensure
       FileUtils.remove_entry @output_path
     end
   end
 
   def geom
-    esri = esri_geom
-    GEOM_TYPES[esri] || raise("Unknown geometry: '#{esri}' for layer #{@name}")
+    GEOM_TYPES[@geo] || raise("Unknown geometry: '#{@geo}' for layer #{@name}")
   end
 
-  def esri_geom
+  def geo
     @page_json['geometryType']
   end
 
@@ -142,11 +144,23 @@ class Layer
     "-a_srs #{GisScraper.config[:srs]}" || ''
   end
 
-  def table
-    '_' << Shellwords.escape(@name.downcase.gsub(' ', '_'))
+  def tables # list of current db table names
+    conn.exec(TABLES).map { |tup| tup['table_name'] }
   end
 
-  def conn
+  def table
+    table_name << table_suffix
+  end
+
+  def table_name
+    Shellwords.escape(@name.downcase.gsub(' ', '_')).prepend('_')
+  end
+
+  def table_suffix
+    tables.any? { |t| t == table_name } ? '_' : ''
+  end
+
+  def c_str
     host, port, db, user, pwd = *@conn_hash.values
     "host=#{host} port=#{port} dbname=#{db} user=#{user} password=#{pwd}"
   end
