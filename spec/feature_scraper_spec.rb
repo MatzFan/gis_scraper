@@ -1,12 +1,14 @@
 describe FeatureScraper do
-
   before do
     GisScraper.configure
   end
 
-  let(:scraper) { FeatureScraper.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0' }
+  root = 'http://gps.digimap.gg/arcgis/rest/services/'
+  recursive_layer = root + 'StatesOfJersey/JerseyMappingOL/MapServer/0'
+  non_recursive_layer = root + 'JerseyUtilities/JerseyUtilities/MapServer/145'
+  let(:scraper) { FeatureScraper.new recursive_layer }
   let(:bad_url_scraper) { FeatureScraper.new 'garbage' }
-  let(:odd_pk_scraper) { FeatureScraper.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/145' }
+  let(:odd_pk_scraper) { FeatureScraper.new non_recursive_layer }
 
   context '#new(url)' do
     it 'instantiates an instance of the class' do
@@ -16,23 +18,23 @@ describe FeatureScraper do
 
   context '#name' do
     it 'returns the name of the layer' do
-      expect(scraper.send :name). to eq 'Gazetteer'
+      expect(scraper.send(:name)). to eq 'Gazetteer'
     end
   end
 
   context '#pk' do
-    it 'returns the "primary key" field for the layer, if it is first in the field list' do
-      expect(scraper.send :pk).to eq 'OBJECTID'
+    it 'returns the pk field, if it is first in the field list' do
+      expect(scraper.send(:pk)).to eq 'OBJECTID'
     end
 
-    it 'returns the "primary key" field for the layer, if it is elsewhere in the field list' do
-      expect(odd_pk_scraper.send :pk).to eq 'OBJECTID'
+    it 'returns the pk field, if it is elsewhere in the field list' do
+      expect(odd_pk_scraper.send(:pk)).to eq 'OBJECTID'
     end
   end
 
   context '#max' do
     it 'returns the "maxRecordCount" value for the layer' do
-      expect(scraper.send :max).to eq 1000
+      expect(scraper.send(:max)).to eq 1000
     end
   end
 
@@ -42,9 +44,9 @@ describe FeatureScraper do
     end
   end
 
-   context '#count' do
+  context '#count' do
     it 'returns the number of records for the layer' do
-      expect(scraper.send :count).to eq 67537
+      expect(scraper.send(:count)).to eq 67_537
     end
   end
 
@@ -73,5 +75,4 @@ describe FeatureScraper do
       expect(scraper.json_data.class).to eq String
     end
   end
-
 end

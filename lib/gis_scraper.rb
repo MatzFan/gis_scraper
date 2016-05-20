@@ -9,19 +9,18 @@ require 'gis_scraper/layer'
 
 # stackoverflow.com/questions/6233124/where-to-place-access-config-file-in-gem
 module GisScraper
-
-  @config = {threads: 8, output_path: '~/Desktop',
-    host: 'localhost', port: 5432, dbname: 'postgres', user: 'postgres', password: nil,
-    srs: nil}
+  @config = { threads: 8, output_path: '~/Desktop', host: 'localhost',
+              port: 5432, dbname: 'postgres', user: 'postgres', password: nil,
+              srs: nil }
   @valid_keys = @config.keys
 
   def self.configure(opts = {})
-    opts.each { |k,v| @config[k.to_sym] = v if @valid_keys.include? k.to_sym }
+    opts.each { |k, v| @config[k.to_sym] = v if @valid_keys.include? k.to_sym }
   end
 
   def self.configure_with(path_to_yaml_file)
     begin
-      config = YAML::load(IO.read(path_to_yaml_file))
+      config = YAML.load(IO.read(path_to_yaml_file))
     rescue Errno::ENOENT
       puts "YAML configuration file couldn't be found. Using defaults"
       return
@@ -37,13 +36,13 @@ module GisScraper
     @config
   end
 
-  class JSONParser < Mechanize::File # shared by FeatureScraper & Layer
+  # shared by FeatureScraper & Layer
+  class JSONParser < Mechanize::File
     attr_reader :json
 
-    def initialize(uri=nil, response=nil, body=nil, code=nil)
+    def initialize(uri = nil, response = nil, body = nil, code = nil)
       super(uri, response, body, code)
       @json = JSON.parse(body)
     end
   end
-
 end

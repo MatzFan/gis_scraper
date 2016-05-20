@@ -1,8 +1,8 @@
 require 'fileutils'
 require 'tmpdir'
 
+# an ArcGIS layer
 class Layer
-
   class UnknownLayerType < StandardError; end
   class NoDatabase < StandardError; end
   class OgrMissing < StandardError; end
@@ -10,31 +10,36 @@ class Layer
   attr_reader :type
 
   TABLES = "SELECT table_name FROM information_schema.tables\
-   WHERE table_schema = 'public'"
+   WHERE table_schema = 'public'".freeze
 
-  TYPE = %w(Group\ Layer Feature\ Layer Annotation\ Layer Annotation\ SubLayer)
+  TYPE = ['Group Layer', 'Feature Layer', 'Annotation Layer',
+          'Annotation SubLayer'].freeze
 
-  CONN = [:host, :port, :dbname, :user, :password] # PG connection options
+  CONN = [:host, :port, :dbname, :user, :password].freeze
 
-  GEOM_TYPES = {'esriGeometryPoint' => 'POINT',
-                'esriGeometryMultipoint' => 'MULTIPOINT',
-                'esriGeometryLine' => 'LINESTRING',
-                'esriGeometryPolyline' => 'MULTILINESTRING',
-                'esriGeometryPolygon' => 'MULTIPOLYGON'}
+  GEOM_TYPES = { 'esriGeometryPoint' => 'POINT',
+                 'esriGeometryMultipoint' => 'MULTIPOINT',
+                 'esriGeometryLine' => 'LINESTRING',
+                 'esriGeometryPolyline' => 'MULTILINESTRING',
+                 'esriGeometryPolygon' => 'MULTIPOLYGON' }.freeze
 
-  MSURL = 'MapServer'
-  OGR = 'ogr2ogr -overwrite -f "PostgreSQL" PG:'
+  MSURL = 'MapServer'.freeze
+  OGR = 'ogr2ogr -overwrite -f "PostgreSQL" PG:'.freeze
 
   def initialize(url, path = nil)
     @conn_hash = CONN.zip(CONN.map { |key| GisScraper.config[key] }).to_h
     @url = url
     @output_path = output_path(path) || config_path
-    @id, @mapserver_url = id, mapserver_url # mapserver url ends '../MapServer'
+    @id = id
+    @mapserver_url = mapserver_url # mapserver url ends '../MapServer'
     @agent = Mechanize.new
     @agent.pluggable_parser['text/plain'] = GisScraper::JSONParser
     validate_url
     @page_json = page_json
-    @type, @name, @sub_layer_ids, @geo = type, name, sub_layer_ids, geo
+    @type = type
+    @name = name
+    @sub_layer_ids = sub_layer_ids
+    @geo = geo
   end
 
   def output_json
@@ -42,8 +47,8 @@ class Layer
   end
 
   def output_to_db
-    raise OgrMissing.new, 'ogr2ogr missing, is GDAL installed?' if !ogr2ogr?
-    raise NoDatabase.new, "No db connection: #{@conn_hash.inspect}" if !conn
+    raise OgrMissing.new, 'ogr2ogr missing, is GDAL installed?' unless ogr2ogr?
+    raise NoDatabase.new, "No db connection: #{@conn_hash.inspect}" unless conn
     output(:db)
   end
 
@@ -84,7 +89,7 @@ class Layer
   end
 
   def validate_url
-    raise ArgumentError, 'URL must end with layer id' if  @id.to_i.to_s != @id
+    raise ArgumentError, 'URL must end with layer id' if @id.to_i.to_s != @id
     raise ArgumentError, 'Bad MapServer URL' if @mapserver_url[-9..-1] != MSURL
   end
 
@@ -101,7 +106,7 @@ class Layer
   end
 
   def validate_type(type)
-    raise UnknownLayerType, type unless (TYPE.any? { |t| t == type })
+    raise UnknownLayerType, type unless TYPE.any? { |t| t == type }
     type
   end
 
@@ -125,7 +130,7 @@ class Layer
     @output_path = Dir.mktmpdir('gis_scraper') # prefix for identification
     begin
       write_json
-      `#{OGR}"#{c_str}" "#{json_path}" -nln #{table} #{srs} -nlt #{geom}`
+      `#{OGR}"#{conn_str}" "#{json_path}" -nln #{table} #{srs} -nlt #{geom}`
     ensure
       FileUtils.remove_entry @output_path
     end
@@ -153,14 +158,14 @@ class Layer
   end
 
   def table_name
-    Shellwords.escape(@name.downcase.gsub(' ', '_')).prepend('_')
+    Shellwords.escape(@name.downcase.tr(' ', '_')).prepend('_')
   end
 
   def table_suffix
     tables.any? { |t| t == table_name } ? '_' : ''
   end
 
-  def c_str
+  def conn_str
     host, port, db, user, pwd = *@conn_hash.values
     "host=#{host} port=#{port} dbname=#{db} user=#{user} password=#{pwd}"
   end
@@ -176,7 +181,6 @@ class Layer
   end
 
   def replace_forwardslashes_with_underscores(string)
-    string.gsub /\//, '_'
+    string.tr('/', '_')
   end
-
 end
