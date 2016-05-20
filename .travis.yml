@@ -3,9 +3,12 @@ language: ruby
 services:
   - postgresql
 
+addons:
+  postgresql: "9.4"
+
 before_script:
+  - sudo apt-get install -y postgresql-9.4-postgis-2.1
   - psql -c 'create database travis_ci_test;' -U postgres
-  - psql -c 'DROP EXTENSION postgis;' -U postgres -d travis_ci_test
   - psql -c 'CREATE EXTENSION postgis;' -U postgres -d travis_ci_test
 
 before_install:
