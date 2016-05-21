@@ -1,20 +1,24 @@
 require 'shellwords'
 
 describe Layer do
-
-  DIGIMAP = 'http://gps.digimap.gg/arcgis/rest/services'
+  DIGIMAP = 'http://gps.digimap.gg/arcgis/rest/services'.freeze
 
   before do
-    GisScraper.configure(output_path: Dir.tmpdir, user: 'me', srs: 'EPSG:3109')
+    GisScraper.configure(output_path: Dir.tmpdir, srs: 'EPSG:3109',
+                         user: ENV['POSTGRES_USER'] || `whoami`.chomp)
   end
 
   def conn
-    PG.connect(host: 'localhost', dbname: ENV['DB'] || GisScraper.config[:dbname], user: ENV['POSTGRES_USER'] || GisScraper.config[:user])
+    PG.connect(host: 'localhost',
+               dbname: ENV['DB'] || GisScraper.config[:dbname],
+               user: ENV['POSTGRES_USER'] || GisScraper.config[:user])
   end
 
   let(:tmp) { Dir.tmpdir }
 
-  def clean_tmp_dir; `rm -rf #{tmp}/*`; end
+  def clean_tmp_dir
+    `rm -rf #{tmp}/*`
+  end
 
   let(:feature_layer) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/11' }
   let(:file_name) { 'Aircraft Noise Zone 1.json' }
@@ -165,12 +169,12 @@ describe Layer do
   context '#output_to_db' do
     it 'raises error OgrMissing if ogr2ogr executable is not found' do
       allow_any_instance_of(Layer).to receive(:ogr2ogr?) { nil }
-      expect(->{feature_layer.output_to_db}).to raise_error Layer::OgrMissing
+      expect(->{ feature_layer.output_to_db }).to raise_error Layer::OgrMissing
     end
 
     it 'raises error NoDatabase if cannot connect to db with config options' do
       allow_any_instance_of(Layer).to receive(:conn) { nil }
-      expect(->{feature_layer.output_to_db}).to raise_error Layer::NoDatabase
+      expect(->{ feature_layer.output_to_db }).to raise_error Layer::NoDatabase
     end
 
     it 'writes a single JSON layer file to a PostgresSQL database table with the same name (lowercased)' do
@@ -198,7 +202,7 @@ describe Layer do
     end
 
     it 'adds a suffix "_" to the table name if it is non-unique' do
-      conn.exec("CREATE TABLE _aircraft_noise_zone_1 (d date);")
+      conn.exec('CREATE TABLE _aircraft_noise_zone_1 (d date);')
       begin
         feature_layer.output_to_db
         res = conn.exec("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
@@ -225,8 +229,7 @@ describe Layer do
     it 'raises error "Unknown geometry type: <esri geometry>" if the layer has an unknown type' do
       layer = feature_layer
       layer.instance_variable_set(:@geo, 'esriGeometryUnknown')
-      expect(->{layer.send(:geom)}).to raise_error "Unknown geometry: 'esriGeometryUnknown' for layer Aircraft Noise Zone 1"
+      expect(->{ layer.send(:geom) }).to raise_error "Unknown geometry: 'esriGeometryUnknown' for layer Aircraft Noise Zone 1"
     end
   end
-
 end
