@@ -5,6 +5,10 @@ language: ruby
 rvm:
   - 2.1
 
+before_script:
+  - brew update
+  - brew reinstall gdal
+
 before_install:
   - gem update bundler
   - pg_ctl -D /usr/local/var/postgres start # https://github.com/travis-ci/travis-ci/issues/1875
