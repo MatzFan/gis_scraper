@@ -4,6 +4,7 @@ os:
 language: ruby
 rvm:
   - 2.1
+  - 2.2
 
 before_install:
   - gem update bundler
@@ -11,7 +12,5 @@ before_install:
 
 before_script:
   - brew update
-  - brew uninstall gdal # dyld: Library not loaded: /usr/local/lib/libspatialite.5.dylib error
-  - brew install gdal --with-postgresql # https://gis.stackexchange.com/questions/33346/how-can-i-update-ogr2ogr-to-include-the-postgresql-driver
 
 script: bundle exec rspec spec
