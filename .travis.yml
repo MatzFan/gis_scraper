@@ -12,8 +12,9 @@ before_install:
 before_script:
   - brew update
   # wihtout following 2 lines: dyld: Library not loaded: /usr/local/lib/libspatialite.5.dylib error
-  - brew uninstall gdal
-  - brew install gdal --with-postgresql # https://gis.stackexchange.com/questions/33346/how-can-i-update-ogr2ogr-to-include-the-postgresql-driver
+  # - brew uninstall gdal
+  # - brew install gdal --with-postgresql # https://gis.stackexchange.com/questions/33346/how-can-i-update-ogr2ogr-to-include-the-postgresql-driver
+  - brew info libspatialite
   - psql -c 'create extension postgis;' -U travis -d postgres
 
 script: bundle exec rspec spec
