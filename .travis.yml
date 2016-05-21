@@ -9,14 +9,16 @@ services:
 addons:
   postgresql: "9.4"
 
-before_script:
-  - psql -c 'create database travis_ci_test;' -U postgres
-  - psql -U postgres -c 'create extension postgis;'
-
 before_install:
   - gem update bundler
+  # from: https://github.com/travis-ci/travis-ci/issues/2401
+  - sudo rm /etc/apt/sources.list.d/ubuntugis-stable-source.list
   - sudo apt-get -qq update
   # http://askubuntu.com/questions/206593/how-to-install-rgdal-on-ubuntu-12-10
   - sudo apt-get install -y r-cran-rgdal
+
+before_script:
+  - psql -c 'create database travis_ci_test;' -U postgres
+  - psql -U postgres -c 'create extension postgis;'
 
 script: bundle exec rspec spec
