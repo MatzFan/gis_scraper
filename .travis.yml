@@ -4,7 +4,6 @@ os:
 language: ruby
 rvm:
   - 2.1
-  - 2.2
 
 services:
   - postgresql
@@ -15,7 +14,6 @@ addons:
 before_install:
   - gem update bundler
   - brew update
-  - brew install gdal
 
 before_script:
   - psql -c 'create database travis_ci_test;' -U postgres
