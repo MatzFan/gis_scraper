@@ -16,6 +16,7 @@ before_install:
   - brew update
 
 before_script:
+  - ps auxw | grep postgres # is postgres running?!
   - psql -c 'create database travis_ci_test;' -U postgres
   - psql -U postgres -c 'create extension postgis;'
 
