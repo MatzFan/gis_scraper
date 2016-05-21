@@ -7,16 +7,12 @@ rvm:
 
 before_install:
   - gem update bundler
+  - pg_ctl -D /usr/local/var/postgres start # https://github.com/travis-ci/travis-ci/issues/1875
 
 before_script:
   - brew update
   # https://serverfault.com/questions/662176/postgres-on-os-x-cant-find-postgis-extension-control-file
-  - brew info postgres
-  - brew uninstall postgres
-  - brew uninstall postgis
-  - brew install postgresql-9.3
-  - brew install postgis
-  - pg_ctl -D /usr/local/var/postgres start # https://github.com/travis-ci/travis-ci/issues/1875
-  - psql -c 'create extension postgis;' -U travis -d postgis
+  - brew uninstall gdal
+  - brew install gdal --with-postgresql # https://gis.stackexchange.com/questions/33346/how-can-i-update-ogr2ogr-to-include-the-postgresql-driver
 
 script: bundle exec rspec spec
