@@ -3,9 +3,10 @@ require 'shellwords'
 describe Layer do
   DIGIMAP = 'http://gps.digimap.gg/arcgis/rest/services'.freeze
 
+  user = ENV['POSTGRES_USER'] || `whoami`.chomp
+
   before do
-    GisScraper.configure(output_path: Dir.tmpdir, srs: 'EPSG:3109',
-                         user: ENV['POSTGRES_USER'] || `whoami`.chomp)
+    GisScraper.configure(output_path: Dir.tmpdir, srs: 'EPSG:3109', user: user)
   end
 
   def conn
@@ -25,7 +26,7 @@ describe Layer do
   let(:group_layer) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/146' }
   let(:no_layer_id_url) { Layer.new 'no/layer/number/specified/MapServer' }
   let(:not_map_server_url) { Layer.new '"MapServer"/missing/42' }
-  let(:feature_layer_with_path) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/11', '~/Desktop' }
+  let(:feature_layer_with_path) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/11', '~/' }
   let(:feature_layer_unsafe_characters) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/14' }
   let(:layer_with_sub_group_layers) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/129' }
   let(:group_layer_with_duplicate_layer_names) { Layer.new "#{DIGIMAP}/JerseyUtilities/JerseyUtilities/MapServer/117" }
@@ -92,9 +93,9 @@ describe Layer do
       layer = feature_layer_with_path
       begin
         layer.send :write_json
-        expect(Dir['/Users/me/Desktop/*']).to include "/Users/me/Desktop/#{file_name}"
+        expect(Dir["/Users/#{user}/*"]).to include "/Users/#{user}/#{file_name}"
       ensure
-        `rm ~/Desktop/#{Shellwords.escape(file_name)}`
+        `rm ~/#{Shellwords.escape(file_name)}`
       end
     end
 
