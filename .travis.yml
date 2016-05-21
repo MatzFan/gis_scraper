@@ -14,10 +14,8 @@ before_script:
   - brew info postgres
   - brew uninstall postgres
   - brew uninstall postgis
-  - brew install postgres
+  - brew install postgresql-9.3
   - brew install postgis
-  # - brew uninstall gdal
-  # - brew install gdal --with-postgresql # https://gis.stackexchange.com/questions/33346/how-can-i-update-ogr2ogr-to-include-the-postgresql-driver
   - pg_ctl -D /usr/local/var/postgres start # https://github.com/travis-ci/travis-ci/issues/1875
   - psql -c 'create extension postgis;' -U travis -d postgis
 
