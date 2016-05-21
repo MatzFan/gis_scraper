@@ -15,6 +15,6 @@ before_script:
   # - brew uninstall gdal
   # - brew install gdal --with-postgresql # https://gis.stackexchange.com/questions/33346/how-can-i-update-ogr2ogr-to-include-the-postgresql-driver
   - brew upgrade libspatialite
-  - psql -c 'create extension postgis;' -U travis -d postgres
+  # - psql -c 'create extension postgis;' -U travis -d postgres
 
 script: bundle exec rspec spec
