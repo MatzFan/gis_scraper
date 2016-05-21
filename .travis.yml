@@ -11,8 +11,6 @@ before_install:
   - pg_ctl -D /usr/local/var/postgres start # https://github.com/travis-ci/travis-ci/issues/1875
 
 before_script:
-  - psql -l
-  - psql -c 'createuser -d postgres;'
-  - psql -c 'create extension postgis;' -U postgres # use default database 'travis'
+  - psql -c 'create extension postgis;' -U travis # use default database 'travis'
 
 script: bundle exec rspec spec
