@@ -13,10 +13,10 @@ before_script:
   - brew update
   # https://serverfault.com/questions/662176/postgres-on-os-x-cant-find-postgis-extension-control-file
   - brew info postgres
-  # - brew uninstall postgres 9.3.5_1
-  # - brew uninstall postgis
-  # - brew info postgres
-  # - brew install postgis
+  - brew uninstall postgres
+  - brew uninstall postgis
+  - brew install postgres 9.3.5_1
+  - brew install postgis
   # - brew uninstall gdal
   # - brew install gdal --with-postgresql # https://gis.stackexchange.com/questions/33346/how-can-i-update-ogr2ogr-to-include-the-postgresql-driver
   - psql -c 'create extension postgis;' -U travis -d postgis
