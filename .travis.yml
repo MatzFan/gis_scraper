@@ -17,7 +17,6 @@ before_install:
   - gem update bundler
   - sudo apt-get -qq update
   # http://askubuntu.com/questions/206593/how-to-install-rgdal-on-ubuntu-12-10
-  - sudo apt-get install -y aptitude
-  - sudo aptitude install -y libgdal-dev libproj-dev
+  - sudo apt-get install -y r-cran-rgdal
 
 script: bundle exec rspec spec
