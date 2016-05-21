@@ -5,18 +5,15 @@ language: ruby
 rvm:
   - 2.1
 
-services:
-  - postgresql
-
 addons:
   postgresql: "9.4"
 
 before_install:
   - gem update bundler
   - brew update
+  - pg_ctl -D /usr/local/var/postgres start # https://github.com/travis-ci/travis-ci/issues/1875
 
 before_script:
-  - ps auxw | grep postgres # is postgres running?!
   - psql -c 'create database travis_ci_test;' -U postgres
   - psql -U postgres -c 'create extension postgis;'
 
