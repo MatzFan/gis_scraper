@@ -11,13 +11,16 @@ addons:
 
 before_install:
   - gem update bundler
-  # Hallelujah: https://github.com/travis-ci/travis-ci/issues/2401
-  - sudo rm /etc/apt/sources.list.d/ubuntugis-stable-source.list
+  # Hallelujah: https://github.com/m-kuhn/QGIS/blob/2d0af644f905d6166c9173425ccfdd3c9a114501/.travis.yml#L18-L35
+  - sudo add-apt-repository ppa:ubuntugis/ppa -y
+  - sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable -y # For postgresql-9.4-postgis-2.1
+  - sudo rm -f /etc/apt/sources.list.d/pgdg-source.list # postgis from pgdg requires different gdal package
   - sudo apt-get update -qq
-  # http://askubuntu.com/questions/206593/how-to-install-rgdal-on-ubuntu-12-10
-  - sudo apt-get install -y aptitude
-  - sudo aptitude install -y libgdal-dev libproj-dev
-  - sudo apt-get -f install -y
+  - sudo apt-get remove postgresql-9.4-postgis-2.1 # Remove postgis from pgdg, will install postgis from ubuntugis-unstable instead
+  - sudo apt-get install --no-install-recommends
+                         aptitude libgdal-dev libproj-dev
+                         postgresql-9.4-postgis-2.1
+
 before_script:
   - psql -c 'create database travis_ci_test;' -U postgres
   - psql -U postgres -c 'create extension postgis;'
