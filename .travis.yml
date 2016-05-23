@@ -1,19 +1,26 @@
-os:
-  - osx
-
 language: ruby
 rvm:
   - 2.1
-  - 2.2.0
+  - 2.2
+
+services:
+  - postgresql
+
+addons:
+  postgresql: "9.4"
 
 before_install:
   - gem update bundler
-  - pg_ctl -D /usr/local/var/postgres start # https://github.com/travis-ci/travis-ci/issues/1875
+  # - pg_ctl -D /usr/local/var/postgres start # https://github.com/travis-ci/travis-ci/issues/1875
 
 before_script:
-  - brew update
+  # - sudo apt-get update
+  # - sudo apt-get install aptitude -y
+  # - sudo apt-get install gdal-dev -y
+  - psql -c "create extension postgis" -U travis -d postgres
+  # - brew update
   # https://serverfault.com/questions/662176/postgres-on-os-x-cant-find-postgis-extension-control-file
-  - brew uninstall gdal
-  - brew install gdal --with-postgresql # https://gis.stackexchange.com/questions/33346/how-can-i-update-ogr2ogr-to-include-the-postgresql-driver
+  # - brew uninstall gdal
+  # - brew install gdal --with-postgresql # https://gis.stackexchange.com/questions/33346/how-can-i-update-ogr2ogr-to-include-the-postgresql-driver
 
 script: bundle exec rspec spec
