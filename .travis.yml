@@ -14,7 +14,9 @@ before_install:
   # - pg_ctl -D /usr/local/var/postgres start # https://github.com/travis-ci/travis-ci/issues/1875
 
 before_script:
-  # - sudo apt-get update
+  - sudo apt-get update
+  - sudo apt-get install gdal-bin
+  - ogrinfo
   # - sudo apt-get install aptitude -y
   # - sudo apt-get install gdal-dev -y
   - psql -c "create extension postgis" -U travis -d postgres
