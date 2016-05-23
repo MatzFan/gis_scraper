@@ -7,7 +7,7 @@ services:
   - postgresql
 
 addons:
-  postgresql: "9.4"
+  postgresql: "9.3"
 
 before_install:
   - gem update bundler
@@ -15,7 +15,8 @@ before_install:
 
 before_script:
   - sudo apt-get update
-  - sudo apt-get install gdal-bin
+  - sudo apt-get install gdal-bin -y
+  - sudo apt-get install postgresql-9.3-postgis-2.1 -y
   # - sudo apt-get install aptitude -y
   # - sudo apt-get install gdal-dev -y
   - psql -c "create extension postgis" -U travis -d postgres
