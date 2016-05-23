@@ -7,16 +7,17 @@ services:
   - postgresql
 
 addons:
-  postgresql: "9.3"
+  postgresql: "9.4"
 
 before_install:
   - gem update bundler
   # - pg_ctl -D /usr/local/var/postgres start # https://github.com/travis-ci/travis-ci/issues/1875
 
 before_script:
-  - sudo apt-get update
+  - sudo rm /etc/apt/sources.list.d/ubuntugis-stable-source.list # https://github.com/travis-ci/travis-ci/issues/2401
+  - sudo apt-get update -qq
   - sudo apt-get install gdal-bin -y
-  - sudo apt-get install libgdal1 postgresql-9.3-postgis-2.1 -y
+  # - sudo apt-get install postgresql-9.4-postgis-2.1 -y # these are removed by installing gdal-bin
   - psql -c "create extension postgis" -U travis -d travis
   # - brew update
   # https://serverfault.com/questions/662176/postgres-on-os-x-cant-find-postgis-extension-control-file
