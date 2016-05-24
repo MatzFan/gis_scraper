@@ -1,5 +1,3 @@
-require 'shellwords'
-
 describe Layer do
   DIGIMAP = 'http://gps.digimap.gg/arcgis/rest/services'.freeze
 

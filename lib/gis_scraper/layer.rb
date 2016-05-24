@@ -1,5 +1,6 @@
 require 'fileutils'
 require 'tmpdir'
+require 'shellwords'
 
 # an ArcGIS layer
 class Layer
