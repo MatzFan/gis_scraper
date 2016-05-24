@@ -1,5 +1,7 @@
 # scrapes feature layers
 class FeatureScraper
+  API_CALL_LIMIT = 1000
+
   attr_reader :name
 
   def initialize(url)
@@ -29,12 +31,16 @@ class FeatureScraper
     @layer['name']
   end
 
+  def renderer
+    @layer['drawingInfo']['renderer']
+  end
+
   def pk
     @layer['fields'].select { |f| f['type'] == 'esriFieldTypeOID' }[0]['name']
   end
 
   def max
-    @layer['maxRecordCount'].to_i
+    @layer['maxRecordCount'] ? @layer['maxRecordCount'].to_i : API_CALL_LIMIT
   end
 
   def form
@@ -43,14 +49,18 @@ class FeatureScraper
 
   def count
     fill_form
-    @form.submit(@form.buttons[1]).json['count'].to_i
+    @form.submit(@form.submits[1]).json['count'].to_i
   end
 
   def fill_form(loop_num = nil)
-    @form.fields[0].value = where_text(loop_num)
-    loop_num ? @form.radiobuttons[4].uncheck : @form.radiobuttons[4].check
-    @form.fields[6].value = '*'
-    @form.field_with(name: 'f').options[1].select # for JSON
+    @form.field_with(name: 'where').value = where_text(loop_num)
+    loop_num ? count_only_radio_button.uncheck : count_only_radio_button.check
+    @form.field_with(name: 'outFields').value = '*'
+    @form.field_with(name: 'f').value = 'pjson'
+  end
+
+  def count_only_radio_button
+    @form.radiobutton_with(name: 'returnCountOnly')
   end
 
   def data(n)

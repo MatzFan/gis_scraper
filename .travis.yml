@@ -17,6 +17,5 @@ before_script:
   - sudo apt-get update -qq
   - sudo apt-get install gdal-bin -y
   - psql -c "create extension postgis" -U $USER -d $USER # default db name is same as user
-  - echo $HOME
 
 script: bundle exec rspec spec

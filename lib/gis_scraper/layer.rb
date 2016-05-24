@@ -137,7 +137,7 @@ class Layer
   end
 
   def geom
-    GEOM_TYPES[@geo] || raise("Unknown geometry: '#{@geo}' for layer #{@name}")
+    GEOM_TYPES[@geo] || raise("Unknown geom: '#{@geo}' for layer #{@name}")
   end
 
   def geo

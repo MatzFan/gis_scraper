@@ -6,9 +6,24 @@ describe FeatureScraper do
   root = 'http://gps.digimap.gg/arcgis/rest/services/'
   recursive_layer = root + 'StatesOfJersey/JerseyMappingOL/MapServer/0'
   non_recursive_layer = root + 'JerseyUtilities/JerseyUtilities/MapServer/145'
+  simple_renderer_layer = 'http://gis.digimap.je/ArcGIS/rest/services/JsyBase/MapServer/34'
   let(:scraper) { FeatureScraper.new recursive_layer }
   let(:bad_url_scraper) { FeatureScraper.new 'garbage' }
-  let(:odd_pk_scraper) { FeatureScraper.new non_recursive_layer }
+  let(:non_recursive_scraper) { FeatureScraper.new non_recursive_layer }
+  let(:simple_renderer_scraper) { FeatureScraper.new simple_renderer_layer }
+  let(:simple_renderer) do
+    { 'type' => 'simple',
+      'symbol' => { 'type' => 'esriSFS',
+                    'style' => 'esriSFSSolid',
+                    'color' => [255, 211, 127, 255],
+                    'outline' => { 'type' => 'esriSLS',
+                                   'style' => 'esriSLSSolid',
+                                   'color' => [0, 0, 0, 255],
+                                   'width' => 0.4 }
+                    },
+      'label' => '',
+      'description' => '' }
+  end
 
   context '#new(url)' do
     it 'instantiates an instance of the class' do
@@ -28,13 +43,18 @@ describe FeatureScraper do
     end
 
     it 'returns the pk field, if it is elsewhere in the field list' do
-      expect(odd_pk_scraper.send(:pk)).to eq 'OBJECTID'
+      expect(non_recursive_scraper.send(:pk)).to eq 'OBJECTID'
     end
   end
 
   context '#max' do
-    it 'returns the "maxRecordCount" value for the layer' do
+    it 'returns the layer API call limit, if key: "maxRecordCount" exits' do
       expect(scraper.send(:max)).to eq 1000
+    end
+
+    it 'returns API_CALL_LIMIT value if key: "maxRecordCount" does not exit' do
+      FeatureScraper.const_set(:API_CALL_LIMIT, 500)
+      expect(simple_renderer_scraper.send(:max)).to eq 500
     end
   end
 
@@ -73,6 +93,12 @@ describe FeatureScraper do
       scraper.instance_variable_set(:@max, 2)
       allow(scraper).to receive(:count) { 4 }
       expect(scraper.json_data.class).to eq String
+    end
+  end
+
+  context '#renderer', :public do
+    it 'returns a hash-representation of the renderer' do
+      expect(simple_renderer_scraper.send(:renderer)).to eq simple_renderer
     end
   end
 end

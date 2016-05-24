@@ -35,7 +35,7 @@ describe Layer do
   let(:annotation_layer) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/8' }
   let(:layer_with_no_geometry) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/6' }
   let(:sub_layer_ids) { [130, 133, 136] }
-  let(:dir_names) { ["#{tmp}/Jersey Gas/High Pressure", "#{tmp}/Jersey Gas/Low Pressure", "#{tmp}/Jersey Gas/Medium Pressure"] }
+  let(:ds) { ["#{tmp}/Jersey Gas/High Pressure", "#{tmp}/Jersey Gas/Low Pressure", "#{tmp}/Jersey Gas/Medium Pressure"] }
   let(:tables) { ["_gas_high_pressure_main", "_gas_low_pressure_main", "_gas_medium_pressure_main", "_high_pressure_asset", "_low_pressure_asset", "_medium_pressure_asset"] }
 
   let(:scraper_double) { instance_double 'FeatureScraper' }
@@ -147,24 +147,26 @@ describe Layer do
       end
     end
 
-    it 'for a group layer creates sub directories mirroring sub-group structure' do
-      allow_any_instance_of(Layer).to receive :write_json_files # stub recursive instances, so nothing is scraped!!
-      begin
-        layer_with_sub_group_layers.output_json
-        expect(Dir["#{Dir.tmpdir}/*/*"].all? { |dir| dir_names.include? dir }).to eq true
-      ensure
-        clean_tmp_dir
+    context 'for a group layer' do
+      it 'creates sub directories mirroring sub-group structure' do
+        allow_any_instance_of(Layer).to receive :write_json_files
+        begin
+          layer_with_sub_group_layers.output_json
+          expect(ds.all? { |d| Dir["#{Dir.tmpdir}/*/*"].include? d }).to eq true
+        ensure
+          clean_tmp_dir
+        end
       end
-    end
 
-    it 'for a group layer calls #write_json_files for each underlying feature layer' do
-      shell_safe_dir_names = dir_names.map { |str| str.gsub(' ', '\ ') }
-      allow_any_instance_of(Layer).to receive(:json_data) { {} } # stub recursive instances, so nothing is scraped!!
-      begin
-        layer_with_sub_group_layers.output_json
-        shell_safe_dir_names.all? { |dir| expect(Dir["#{Dir.tmpdir}/**/*.json"].size).to eq 6 } # 6 json files should be written in total
-      ensure
-        clean_tmp_dir
+      it 'calls #write_json_files for each underlying feature layer' do
+        safe_dirs = ds.map { |str| str.gsub(' ', '\ ') }
+        allow_any_instance_of(Layer).to receive(:json_data) { {} }
+        begin
+          layer_with_sub_group_layers.output_json
+          safe_dirs.all? { expect(Dir["#{Dir.tmpdir}/**/*.json"].size).to eq 6 }
+        ensure
+          clean_tmp_dir
+        end
       end
     end
   end
@@ -229,10 +231,11 @@ describe Layer do
       expect(feature_layer.send(:geom)).to eq 'MULTIPOLYGON'
     end
 
-    it 'raises error "Unknown geometry type: <esri geometry>" if the layer has an unknown type' do
+    it 'raises "Unknown geom type: <esri geometry>" for an unknown type' do
       layer = feature_layer
       layer.instance_variable_set(:@geo, 'esriGeometryUnknown')
-      expect(->{ layer.send(:geom) }).to raise_error "Unknown geometry: 'esriGeometryUnknown' for layer Aircraft Noise Zone 1"
+      e = "Unknown geom: 'esriGeometryUnknown' for layer Aircraft Noise Zone 1"
+      expect(-> { layer.send(:geom) }).to raise_error e
     end
   end
 end
