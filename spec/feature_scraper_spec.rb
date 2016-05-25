@@ -6,11 +6,15 @@ describe FeatureScraper do
   root = 'http://gps.digimap.gg/arcgis/rest/services/'
   recursive_layer = root + 'StatesOfJersey/JerseyMappingOL/MapServer/0'
   non_recursive_layer = root + 'JerseyUtilities/JerseyUtilities/MapServer/145'
-  simple_renderer_layer = 'http://gis.digimap.je/ArcGIS/rest/services/JsyBase/MapServer/34'
+  simple = 'http://gis.digimap.je/ArcGIS/rest/services/JsyBase/MapServer/34'
+  gaz = 'http://gis.digimap.je/ArcGIS/rest/services/Gazetteer/MapServer/0'
+  gaz_keys = %w(OBJECTID guid_ logicalstatus Add1 Add2 Add3 Add4 Parish
+                Postcode Island UPRN USRN Property_Type Address1 Easting
+                Northing Vingtaine Updated)
   let(:scraper) { FeatureScraper.new recursive_layer }
   let(:bad_url_scraper) { FeatureScraper.new 'garbage' }
   let(:non_recursive_scraper) { FeatureScraper.new non_recursive_layer }
-  let(:simple_renderer_scraper) { FeatureScraper.new simple_renderer_layer }
+  let(:simple_renderer_scraper) { FeatureScraper.new simple }
   let(:simple_renderer) do
     { 'type' => 'simple',
       'symbol' => { 'type' => 'esriSFS',
@@ -71,8 +75,29 @@ describe FeatureScraper do
   end
 
   context '#data(records_set_num)' do
-    it 'returns a hash of json data with no args' do
+    it 'returns a hash of json data' do
       expect(scraper.send(:data, 0).class).to eq Hash
+    end
+
+    it 'returns a hash with a "features" key' do
+      expect(scraper.send(:data, 0).keys.include?('features')).to eq true
+    end
+
+    it "['features'] value is a an array of hashes" do
+      expect(scraper.send(:data, 0)['features'].all? do |e|
+        e.class == Hash
+      end).to eq true
+    end
+
+    it 'each hash has keys "attributes" and "geometry". Values are hashes' do
+      expect(scraper.send(:data, 0)['features'].all? do |e|
+        e['attributes'].class == Hash && e['geometry'].class == Hash
+      end).to eq true
+    end
+
+    it "['attributes'] is a hash whose keys are the layer fields" do
+      expect(FeatureScraper.new(gaz).send(:data, 0)['features'][0]['attributes']
+        .keys).to eq gaz_keys
     end
 
     it 'returns data for the set of records' do
