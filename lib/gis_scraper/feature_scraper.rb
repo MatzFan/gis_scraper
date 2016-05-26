@@ -1,6 +1,8 @@
 # scrapes feature layers
 class FeatureScraper
   API_CALL_LIMIT = 1000
+  STRING = 'esriFieldTypeString'.freeze
+  VARCHAR_MAX_SIZE = 10_485_760
 
   attr_reader :name
 
@@ -65,7 +67,23 @@ class FeatureScraper
 
   def data(n)
     fill_form(n)
-    @form.submit(@form.buttons[1]).json
+    check_field_length! @form.submit(@form.buttons[1]).json
+  end
+
+  def check_field_length!(hash)
+    hash.merge check_fields!(hash['fields'])
+  end
+
+  def check_fields!(fields)
+    { 'fields' => fields.map { |f| f['type'] == STRING ? esri_string(f) : f } }
+  end
+
+  def esri_string(field_hash)
+    field_hash.each { |k, v| field_hash[k] = k == 'length' ? truncate(v) : v }
+  end
+
+  def truncate(length)
+    length > VARCHAR_MAX_SIZE ? VARCHAR_MAX_SIZE : length
   end
 
   def features(t)
