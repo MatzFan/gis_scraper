@@ -70,7 +70,7 @@ class FeatureScraper
     check_field_length @form.submit(@form.buttons[1]).json
   end
 
-  def check_field_length(hash)
+  def check_field_length(hash) # https://trac.osgeo.org/gdal/ticket/6529
     hash.merge check_fields(hash['fields'])
   end
 
@@ -83,7 +83,7 @@ class FeatureScraper
   end
 
   def truncate(length)
-    length > VARCHAR_MAX_SIZE ? VARCHAR_MAX_SIZE : length
+    length > VARCHAR_MAX_SIZE ? 0 : length
   end
 
   def features(t)

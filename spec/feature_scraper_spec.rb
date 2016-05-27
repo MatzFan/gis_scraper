@@ -107,7 +107,7 @@ describe FeatureScraper do
     context 'for data with "esriFieldTypeString"' do # ogr2ogr bug
       it 'truncates length to Postgres max value: 10485760, if necessary' do
         fields = FeatureScraper.new(gaz).send(:data, 0)['fields']
-        expect(fields[3..9].all? { |f| f['length'] == 10_485_760 }).to eq true
+        expect(fields[3..9].all? { |f| f['length'] == 0 }).to eq true
       end
     end
   end
