@@ -67,19 +67,19 @@ class FeatureScraper
 
   def data(n)
     fill_form(n)
-    check_field_length! @form.submit(@form.buttons[1]).json
+    check_field_length @form.submit(@form.buttons[1]).json
   end
 
-  def check_field_length!(hash)
-    hash.merge check_fields!(hash['fields'])
+  def check_field_length(hash)
+    hash.merge check_fields(hash['fields'])
   end
 
-  def check_fields!(fields)
+  def check_fields(fields)
     { 'fields' => fields.map { |f| f['type'] == STRING ? esri_string(f) : f } }
   end
 
-  def esri_string(field_hash)
-    field_hash.each { |k, v| field_hash[k] = k == 'length' ? truncate(v) : v }
+  def esri_string(fields)
+    Hash[fields.map { |k, v| [k, k == 'length' ? truncate(v) : v] }] # nice :)
   end
 
   def truncate(length)
