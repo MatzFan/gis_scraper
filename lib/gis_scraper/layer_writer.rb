@@ -2,8 +2,8 @@ require 'fileutils'
 require 'tmpdir'
 require 'shellwords'
 
-# an ArcGIS layer
-class Layer
+# tool to write ArcGIS layer(s) to json or database output
+class LayerWriter
   class UnknownLayerType < StandardError; end
   class NoDatabase < StandardError; end
   class OgrMissing < StandardError; end
@@ -24,7 +24,6 @@ class Layer
                  'esriGeometryPolyline' => 'MULTILINESTRING',
                  'esriGeometryPolygon' => 'MULTIPOLYGON' }.freeze
 
-  MSURL = 'MapServer'.freeze
   OGR = 'ogr2ogr -overwrite -f "PostgreSQL" PG:'.freeze
 
   def initialize(url, path = nil)
@@ -32,10 +31,8 @@ class Layer
     @url = url
     @output_path = output_path(path) || config_path
     @id = id
-    @mapserver_url = mapserver_url # mapserver url ends '../MapServer'
-    @agent = Mechanize.new
-    @agent.pluggable_parser['text/plain'] = GisScraper::JSONParser
-    validate_url
+    @service_url = service_url
+    @layer = layer
     @page_json = page_json
     @type = type
     @name = name
@@ -81,7 +78,7 @@ class Layer
     File.expand_path GisScraper.config[:output_path]
   end
 
-  def mapserver_url
+  def service_url
     @url.split('/')[0..-2].join('/')
   end
 
@@ -89,13 +86,12 @@ class Layer
     @url.split('/').last
   end
 
-  def validate_url
-    raise ArgumentError, 'URL must end with layer id' if @id.to_i.to_s != @id
-    raise ArgumentError, 'Bad MapServer URL' if @mapserver_url[-9..-1] != MSURL
+  def layer
+    ArcREST::Layer.new @url
   end
 
   def page_json
-    @agent.get(@url + '?f=pjson').json
+    @layer.json
   end
 
   def type
@@ -116,7 +112,7 @@ class Layer
   end
 
   def json_data
-    FeatureScraper.new("#{@mapserver_url}/#{@id}").json_data
+    FeatureScraper.new("#{@service_url}/#{@id}").json_data
   end
 
   def write_json
@@ -178,7 +174,7 @@ class Layer
   end
 
   def sub_layer(id, path)
-    Layer.new("#{@mapserver_url}/#{id}", path)
+    self.class.new("#{@service_url}/#{id}", path)
   end
 
   def replace_forwardslashes_with_underscores(string)

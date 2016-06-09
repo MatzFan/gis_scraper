@@ -79,22 +79,22 @@ GisScraper.config # returns the hash of configuration values
 
 ## Usage
 
-A Layer object must be instantiated with one required arg - a MapServer/Layer URL (ending in an integer representing the layer number). Example:
+A LayerWriter object must be instantiated with one required arg - a Service/Layer URL (ending in an integer representing the layer number). Example:
 
 ```
-layer = Layer.new('http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0')
+writer = LayerWriter.new('http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0')
 ```
 
 An optional second argument for the output path for JSON files may be specified. If so this overides the configuration option. Example:
 
 ```
-layer = Layer.new('http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0', '~/Desktop')
+writer = LayerWriter.new('http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0', '~/Desktop')
 ```
 
 **JSON output**
 
 ```
-layer.output_json
+writer.output_json
 ```
 
 If the layer is type 'Feature Layer', a single file of JSON data will be saved (named the same as the layer). If the layer is type 'Group Layer', the sub-group structure is traversed recursively thus: Directories for each sub-group layer are created and JSON data files for each constituent feature layer written to them.
@@ -104,7 +104,7 @@ If the layer is type 'Feature Layer', a single file of JSON data will be saved (
 Valid database config options must be set. The following command will convert JSON files, create tables for each layer (& sub-layers, if any) and import the data. Table names are lowercased, prefixed '_' and have spaces replaced with undescores. If a table with the same name exists the name is appended with '_'.
 
 ```
-layer.output_to_db
+writer.output_to_db
 ```
 
 ## Specification and Tests

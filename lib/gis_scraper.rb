@@ -1,11 +1,12 @@
 require 'yaml'
-require 'mechanize'
+require 'arcrest'
+# require 'mechanize'
 require 'parallel'
 require 'pg'
 
 require 'gis_scraper/version'
 require 'gis_scraper/feature_scraper'
-require 'gis_scraper/layer'
+require 'gis_scraper/layer_writer'
 
 # stackoverflow.com/questions/6233124/where-to-place-access-config-file-in-gem
 module GisScraper
@@ -37,12 +38,12 @@ module GisScraper
   end
 
   # shared by FeatureScraper & Layer
-  class JSONParser < Mechanize::File
-    attr_reader :json
+  # class JSONParser < Mechanize::File
+  #   attr_reader :json
 
-    def initialize(uri = nil, response = nil, body = nil, code = nil)
-      super(uri, response, body, code)
-      @json = JSON.parse(body)
-    end
-  end
+  #   def initialize(uri = nil, response = nil, body = nil, code = nil)
+  #     super(uri, response, body, code)
+  #     @json = JSON.parse(body)
+  #   end
+  # end
 end

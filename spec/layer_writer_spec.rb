@@ -1,4 +1,4 @@
-describe Layer do
+describe LayerWriter do
   DIGIMAP = 'http://gps.digimap.gg/arcgis/rest/services'.freeze
 
   user = ENV['POSTGRES_USER'] || `whoami`.chomp
@@ -21,17 +21,18 @@ describe Layer do
     `rm -rf #{tmp}/*`
   end
 
-  let(:feature_layer) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/11' }
+  let(:gazetteer) { LayerWriter.new 'http://gis.digimap.je/ArcGIS/rest/services/Gazetteer/MapServer/0' }
+  let(:feature_layer) { LayerWriter.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/11' }
   let(:file_name) { 'Aircraft Noise Zone 1.json' }
-  let(:group_layer) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/146' }
-  let(:no_layer_id_url) { Layer.new 'no/layer/number/specified/MapServer' }
-  let(:not_map_server_url) { Layer.new '"MapServer"/missing/42' }
-  let(:feature_layer_with_path) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/11', path }
-  let(:feature_layer_unsafe_characters) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/14' }
-  let(:layer_with_sub_group_layers) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/129' }
-  let(:group_layer_with_duplicate_layer_names) { Layer.new "#{DIGIMAP}/JerseyUtilities/JerseyUtilities/MapServer/117" }
-  let(:annotation_layer) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/8' }
-  let(:layer_with_no_geometry) { Layer.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/6' }
+  let(:group_layer) { LayerWriter.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/146' }
+  let(:no_layer_id_url) { LayerWriter.new 'no/layer/number/specified/MapServer' }
+  let(:not_map_server_url) { LayerWriter.new '"MapServer"/missing/42' }
+  let(:feature_layer_with_path) { LayerWriter.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/11', path }
+  let(:feature_layer_unsafe_characters) { LayerWriter.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyPlanning/MapServer/14' }
+  let(:layer_with_sub_group_layers) { LayerWriter.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/129' }
+  let(:group_layer_with_duplicate_layer_names) { LayerWriter.new "#{DIGIMAP}/JerseyUtilities/JerseyUtilities/MapServer/117" }
+  let(:annotation_layer) { LayerWriter.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/8' }
+  let(:layer_with_no_geometry) { LayerWriter.new 'http://gps.digimap.gg/arcgis/rest/services/JerseyUtilities/JerseyUtilities/MapServer/6' }
   let(:sub_layer_ids) { [130, 133, 136] }
   let(:ds) { ["#{tmp}/Jersey Gas/High Pressure", "#{tmp}/Jersey Gas/Low Pressure", "#{tmp}/Jersey Gas/Medium Pressure"] }
   let(:tables) { ["_gas_high_pressure_main", "_gas_low_pressure_main", "_gas_medium_pressure_main", "_high_pressure_asset", "_low_pressure_asset", "_medium_pressure_asset"] }
@@ -39,22 +40,14 @@ describe Layer do
   let(:scraper_double) { instance_double 'FeatureScraper' }
 
   context '#new(url)' do
-    it 'raises ArgumentError "URL must end with layer id" with a URL not ending in an integer' do
-      expect(->{no_layer_id_url}).to raise_error ArgumentError, 'URL must end with layer id'
-    end
-
-    it 'raises ArgumentError "Bad MapServer URL" with a URL not ending "MapServer/<integer>"' do
-      expect(->{not_map_server_url}).to raise_error ArgumentError, 'Bad MapServer URL'
-    end
-
-    it 'instantiates an instance of the class with a valid MapServer layer url string' do
-      expect(feature_layer.class).to eq Layer
+    it 'returns an instance of the class with a layer url string' do
+      expect(feature_layer.class).to eq described_class
     end
   end
 
   context '#validate_type' do
     it 'raises UnknownLayerType <type> if layer type is not in TYPES' do
-      expect(->{feature_layer.send(:validate_type, 'Unknown Layer')}).to raise_error Layer::UnknownLayerType, 'Unknown Layer'
+      expect(->{feature_layer.send(:validate_type, 'Unknown Layer')}).to raise_error LayerWriter::UnknownLayerType, 'Unknown Layer'
     end
   end
 
@@ -114,7 +107,7 @@ describe Layer do
   context '#output_json', :public do
     it 'does not call #write_json for an annotation layer' do
       layer = annotation_layer
-      allow_any_instance_of(Layer).to receive(:json_data) { nil }
+      allow_any_instance_of(LayerWriter).to receive(:json_data) { nil }
       begin
         layer.output_json
         expect(layer).not_to receive(:write_json)
@@ -125,7 +118,7 @@ describe Layer do
 
     it 'does not call #write_json for a layer with no geometryType' do
       layer = layer_with_no_geometry
-      allow_any_instance_of(Layer).to receive(:json_data) { nil }
+      allow_any_instance_of(LayerWriter).to receive(:json_data) { nil }
       begin
         layer.output_json
         expect(layer).not_to receive(:write_json)
@@ -136,7 +129,7 @@ describe Layer do
 
     it 'calls #write_json for a feature layer' do
       layer = feature_layer
-      allow_any_instance_of(Layer).to receive(:json_data) { nil }
+      allow_any_instance_of(LayerWriter).to receive(:json_data) { nil }
       begin
         layer.output_json
         expect(Dir["#{Dir.tmpdir}/*"]).to include "#{tmp}/#{file_name}"
@@ -147,7 +140,7 @@ describe Layer do
 
     context 'for a group layer' do
       it 'creates sub directories mirroring sub-group structure' do
-        allow_any_instance_of(Layer).to receive :write_json_files
+        allow_any_instance_of(LayerWriter).to receive :write_json_files
         begin
           layer_with_sub_group_layers.output_json
           expect(ds.all? { |d| Dir["#{Dir.tmpdir}/*/*"].include? d }).to eq true
@@ -158,7 +151,7 @@ describe Layer do
 
       it 'calls #write_json_files for each underlying feature layer' do
         safe_dirs = ds.map { |str| str.gsub(' ', '\ ') }
-        allow_any_instance_of(Layer).to receive(:json_data) { {} }
+        allow_any_instance_of(LayerWriter).to receive(:json_data) { {} }
         begin
           layer_with_sub_group_layers.output_json
           safe_dirs.all? { expect(Dir["#{Dir.tmpdir}/**/*.json"].size).to eq 6 }
@@ -171,13 +164,13 @@ describe Layer do
 
   context '#output_to_db' do
     it 'raises error OgrMissing if ogr2ogr executable is not found' do
-      allow_any_instance_of(Layer).to receive(:ogr2ogr?) { nil }
-      expect(->{ feature_layer.output_to_db }).to raise_error Layer::OgrMissing
+      allow_any_instance_of(LayerWriter).to receive(:ogr2ogr?) { nil }
+      expect(->{ feature_layer.output_to_db }).to raise_error LayerWriter::OgrMissing
     end
 
     it 'raises error NoDatabase if cannot connect to db with config options' do
-      allow_any_instance_of(Layer).to receive(:conn) { nil }
-      expect(->{ feature_layer.output_to_db }).to raise_error Layer::NoDatabase
+      allow_any_instance_of(LayerWriter).to receive(:conn) { nil }
+      expect(->{ feature_layer.output_to_db }).to raise_error LayerWriter::NoDatabase
     end
 
     it 'writes a single JSON layer file to a PostgresSQL database table with the same name (lowercased)' do

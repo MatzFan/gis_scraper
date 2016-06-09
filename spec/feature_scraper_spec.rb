@@ -7,11 +7,11 @@ describe FeatureScraper do
   recursive_layer = root + 'StatesOfJersey/JerseyMappingOL/MapServer/0'
   non_recursive_layer = root + 'JerseyUtilities/JerseyUtilities/MapServer/145'
   simple = 'http://gis.digimap.je/ArcGIS/rest/services/JsyBase/MapServer/34'
-  gaz = 'http://gis.digimap.je/ArcGIS/rest/services/Gazetteer/MapServer/0'
-  gaz_keys = %w(OBJECTID guid_ logicalstatus Add1 Add2 Add3 Add4 Parish
-                Postcode Island UPRN USRN Property_Type Address1 Easting
-                Northing Vingtaine Updated)
+  gaz_url = 'http://gis.digimap.je/ArcGIS/rest/services/Gazetteer/MapServer/0'
+  esri_string = 'esriFieldTypeString'
+
   let(:scraper) { FeatureScraper.new recursive_layer }
+  let(:gaz_scraper) { FeatureScraper.new gaz_url }
   let(:bad_url_scraper) { FeatureScraper.new 'garbage' }
   let(:non_recursive_scraper) { FeatureScraper.new non_recursive_layer }
   let(:simple_renderer_scraper) { FeatureScraper.new simple }
@@ -23,15 +23,15 @@ describe FeatureScraper do
                     'outline' => { 'type' => 'esriSLS',
                                    'style' => 'esriSLSSolid',
                                    'color' => [0, 0, 0, 255],
-                                   'width' => 0.4 }
-                    },
+                                   'width' => 0.4 } },
       'label' => '',
       'description' => '' }
   end
 
   context '#new(url)' do
     it 'instantiates an instance of the class' do
-      expect(scraper.class).to eq FeatureScraper
+      s = FeatureScraper.new 'http://gps.digimap.gg/arcgis/rest/services/StatesOfJersey/JerseyMappingOL/MapServer/0'
+      expect(s.class).to eq FeatureScraper
     end
   end
 
@@ -62,61 +62,17 @@ describe FeatureScraper do
     end
   end
 
-  context '#form' do
-    it 'returns a Mechanize::Form for the layer query page' do
-      expect(scraper.send(:form).class).to eq Mechanize::Form
-    end
-  end
-
   context '#count' do
     it 'returns the number of records for the layer' do
       expect(scraper.send(:count)).to eq 67_537
     end
   end
 
-  context '#data(records_set_num)' do
-    it 'returns a hash of json data' do
-      expect(scraper.send(:data, 0).class).to eq Hash
-    end
-
-    it 'returns a hash with a "features" key' do
-      expect(scraper.send(:data, 0).keys.include?('features')).to eq true
-    end
-
-    it "['features'] value is a an array of hashes" do
-      expect(scraper.send(:data, 0)['features'].all? do |e|
-        e.class == Hash
-      end).to eq true
-    end
-
-    it 'each hash has keys "attributes" and "geometry". Values are hashes' do
-      expect(scraper.send(:data, 0)['features'].all? do |e|
-        e['attributes'].class == Hash && e['geometry'].class == Hash
-      end).to eq true
-    end
-
-    it "['attributes'] is a hash whose keys are the layer fields" do
-      expect(FeatureScraper.new(gaz).send(:data, 0)['features'][0]['attributes']
-        .keys).to eq gaz_keys
-    end
-
-    it 'returns data for the set of records' do
-      expect(scraper.send(:data, 67)['features'].count).to eq 537
-    end
-
-    context 'for data with "esriFieldTypeString"' do # ogr2ogr bug
-      it 'truncates length to Postgres max value: 10485760, if necessary' do
-        fields = FeatureScraper.new(gaz).send(:data, 0)['fields']
-        expect(fields[3..9].all? { |f| f['length'] == 0 }).to eq true
-      end
-    end
-  end
-
-  context '#features(num_threads)' do
+  context '#all_features(num_threads)' do
     it 'returns an array of the features data for all layer objects' do
       scraper.instance_variable_set(:@max, 2)
       scraper.instance_variable_set(:@loops, 2)
-      expect(scraper.send(:features, 1).count).to eq 4
+      expect(scraper.send(:all_features, 1).count).to eq 4
     end
   end
 
@@ -131,6 +87,19 @@ describe FeatureScraper do
   context '#renderer', :public do
     it 'returns a hash-representation of the renderer' do
       expect(simple_renderer_scraper.send(:renderer)).to eq simple_renderer
+    end
+  end
+
+  context '#query_without_features' do
+    it 'returns a hash of a layer query with features: value empty' do
+      features = non_recursive_scraper.send(:query_without_features)['features']
+      expect(features).to be_empty
+    end
+
+    it 'converts any VARCHAR fields > length 10,485,760 to length 0' do
+      fields = gaz_scraper.send(:query_without_features)['fields']
+      esri_string_fields = fields.select { |f| f['type'] == esri_string }
+      expect(esri_string_fields.all? { |f| f['length'] == 0 }).to eq true
     end
   end
 end
