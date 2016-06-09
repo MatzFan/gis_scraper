@@ -2,7 +2,6 @@
 class FeatureScraper
   API_CALL_LIMIT = 1000
   STRING = 'esriFieldTypeString'.freeze
-  VARCHAR_MAX_SIZE = 10_485_760
 
   attr_reader :name
 
