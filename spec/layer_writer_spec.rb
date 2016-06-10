@@ -46,28 +46,29 @@ describe LayerWriter do
   end
 
   context '#validate_type' do
-    it 'raises UnknownLayerType <type> if layer type is not in TYPES' do
-      expect(->{feature_layer.send(:validate_type, 'Unknown Layer')}).to raise_error LayerWriter::UnknownLayerType, 'Unknown Layer'
+    it 'raises "Bad Layer type <layer_type>" if layer type is not in TYPES' do
+      lamb = -> { feature_layer.send(:validate_layer, 'Unknown Layer') }
+      expect(lamb).to raise_error 'Bad Layer type: Unknown Layer'
     end
   end
 
   context '#type' do
     it 'returns the layer type for a feature layer' do
-      expect(feature_layer.send :type).to eq 'Feature Layer'
+      expect(feature_layer.send(:type)).to eq 'Feature Layer'
     end
 
     it 'returns the layer type for a group layer' do
-      expect(group_layer.send :type).to eq 'Group Layer'
+      expect(group_layer.send(:type)).to eq 'Group Layer'
     end
   end
 
   context '#sub_layer_ids' do
     it 'returns an empty list for a feature layer (which have no sub layers)' do
-      expect(feature_layer.send :sub_layer_ids).to eq []
+      expect(feature_layer.send(:sub_layer_ids)).to eq []
     end
 
     it 'returns a list of the sublayer ids for a group layer, if any' do
-      expect(layer_with_sub_group_layers.send :sub_layer_ids).to eq sub_layer_ids
+      expect(layer_with_sub_group_layers.send(:sub_layer_ids)).to eq sub_layer_ids
     end
   end
 
@@ -163,14 +164,10 @@ describe LayerWriter do
   end
 
   context '#output_to_db' do
-    it 'raises error OgrMissing if ogr2ogr executable is not found' do
+    it 'raises error if ogr2ogr executable is not found' do
       allow_any_instance_of(LayerWriter).to receive(:ogr2ogr?) { nil }
-      expect(->{ feature_layer.output_to_db }).to raise_error LayerWriter::OgrMissing
-    end
-
-    it 'raises error NoDatabase if cannot connect to db with config options' do
-      allow_any_instance_of(LayerWriter).to receive(:conn) { nil }
-      expect(->{ feature_layer.output_to_db }).to raise_error LayerWriter::NoDatabase
+      lambda = -> { feature_layer.output_to_db }
+      expect(lambda).to raise_error 'ogr2ogr executable missing, is GDAL installed?'
     end
 
     it 'writes a single JSON layer file to a PostgresSQL database table with the same name (lowercased)' do
@@ -217,16 +214,16 @@ describe LayerWriter do
     end
   end
 
-  context '#geom' do
+  context '#pg_geom' do
     it 'returns the PostGIS geometry type from a JSON file' do
-      expect(feature_layer.send(:geom)).to eq 'MULTIPOLYGON'
+      expect(feature_layer.send(:pg_geom)).to eq 'MULTIPOLYGON'
     end
 
     it 'raises "Unknown geom type: <esri geometry>" for an unknown type' do
       layer = feature_layer
-      layer.instance_variable_set(:@geo, 'esriGeometryUnknown')
+      allow(layer).to receive(:geo) { 'esriGeometryUnknown' }
       e = "Unknown geom: 'esriGeometryUnknown' for layer Aircraft Noise Zone 1"
-      expect(-> { layer.send(:geom) }).to raise_error e
+      expect(-> { layer.send(:pg_geom) }).to raise_error e
     end
   end
 end

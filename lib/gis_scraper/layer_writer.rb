@@ -4,40 +4,29 @@ require 'shellwords'
 
 # tool to write ArcGIS layer(s) to json or database output
 class LayerWriter
-  class UnknownLayerType < StandardError; end
-  class NoDatabase < StandardError; end
-  class OgrMissing < StandardError; end
-
   attr_reader :type
 
   TABLES = "SELECT table_name FROM information_schema.tables\
    WHERE table_schema = 'public'".freeze
-
-  TYPE = ['Group Layer', 'Feature Layer', 'Annotation Layer',
-          'Annotation SubLayer'].freeze
-
+  TYPES = ['Group ', 'Feature ', 'Annotation ', 'Annotation Sub'].freeze
   CONN = [:host, :port, :dbname, :user, :password].freeze
-
   GEOM_TYPES = { 'esriGeometryPoint' => 'POINT',
                  'esriGeometryMultipoint' => 'MULTIPOINT',
                  'esriGeometryLine' => 'LINESTRING',
                  'esriGeometryPolyline' => 'MULTILINESTRING',
                  'esriGeometryPolygon' => 'MULTIPOLYGON' }.freeze
-
   OGR = 'ogr2ogr -overwrite -f "PostgreSQL" PG:'.freeze
 
   def initialize(url, path = nil)
-    @conn_hash = CONN.zip(CONN.map { |key| GisScraper.config[key] }).to_h
+    @conn = CONN.zip(CONN.map { |key| GisScraper.config[key] }).to_h
     @url = url
     @output_path = output_path(path) || config_path
     @id = id
     @service_url = service_url
     @layer = layer
-    @page_json = page_json
+    @page_json = @layer.json
     @type = type
     @name = name
-    @sub_layer_ids = sub_layer_ids
-    @geo = geo
   end
 
   def output_json
@@ -45,21 +34,18 @@ class LayerWriter
   end
 
   def output_to_db
-    raise OgrMissing.new, 'ogr2ogr missing, is GDAL installed?' unless ogr2ogr?
-    raise NoDatabase.new, "No db connection: #{@conn_hash.inspect}" unless conn
+    raise 'ogr2ogr executable missing, is GDAL installed?' unless ogr2ogr?
     output(:db)
   end
 
   private
 
   def output(format) # recurses sub-layers, if any (none for Annotation layers)
-    (@type == 'Feature Layer' && @geo) ? method(format) : do_sub_layers(format)
+    @type == 'Feature Layer' ? method(format) : do_sub_layers(format)
   end
 
   def method(format)
-    return write_json if format == :json
-    return write_to_db if format == :db
-    raise "Unknown output format: #{format}"
+    format == :db ? write_to_db : write_json
   end
 
   def output_path(path)
@@ -67,11 +53,13 @@ class LayerWriter
   end
 
   def conn
-    PG.connect(@conn_hash) rescue nil
+    PG.connect(@conn)
   end
 
   def ogr2ogr?
-    `ogr2ogr --version` rescue nil
+    `ogr2ogr --version`
+  rescue Errno::ENOENT
+    nil
   end
 
   def config_path
@@ -90,21 +78,17 @@ class LayerWriter
     ArcREST::Layer.new @url
   end
 
-  def page_json
-    @layer.json
+  def type
+    validate_layer @page_json['type']
   end
 
-  def type
-    validate_type @page_json['type']
+  def validate_layer(typ)
+    raise "Bad Layer type: #{typ}" unless TYPES.any? { |t| "#{t}Layer" == typ }
+    typ
   end
 
   def name
-    replace_forwardslashes_with_underscores @page_json['name']
-  end
-
-  def validate_type(type)
-    raise UnknownLayerType, type unless TYPE.any? { |t| t == type }
-    type
+    @page_json['name'].tr('/', '_') # make Postgres-safe
   end
 
   def sub_layer_ids
@@ -125,16 +109,14 @@ class LayerWriter
 
   def write_to_db
     @output_path = Dir.mktmpdir('gis_scraper') # prefix for identification
-    begin
-      write_json
-      `#{OGR}"#{conn_str}" "#{json_path}" -nln #{table} #{srs} -nlt #{geom}`
-    ensure
-      FileUtils.remove_entry @output_path
-    end
+    write_json
+    `#{OGR}"#{conn_str}" "#{json_path}" -nln #{table} #{srs} -nlt #{pg_geom}`
+  ensure
+    FileUtils.remove_entry @output_path
   end
 
-  def geom
-    GEOM_TYPES[@geo] || raise("Unknown geom: '#{@geo}' for layer #{@name}")
+  def pg_geom
+    GEOM_TYPES[geo] || raise("Unknown geom: '#{geo}' for layer #{@name}")
   end
 
   def geo
@@ -163,21 +145,17 @@ class LayerWriter
   end
 
   def conn_str
-    host, port, db, user, pwd = *@conn_hash.values
+    host, port, db, user, pwd = *@conn.values
     "host=#{host} port=#{port} dbname=#{db} user=#{user} password=#{pwd}"
   end
 
   def do_sub_layers(format)
     FileUtils.mkdir File.join(@output_path, @name) if format == :json
     path = @output_path << "/#{@name}"
-    @sub_layer_ids.each { |n| sub_layer(n, path).send(:output, format) }
+    sub_layer_ids.each { |n| sub_layer(n, path).send(:output, format) }
   end
 
   def sub_layer(id, path)
     self.class.new("#{@service_url}/#{id}", path)
-  end
-
-  def replace_forwardslashes_with_underscores(string)
-    string.tr('/', '_')
   end
 end
